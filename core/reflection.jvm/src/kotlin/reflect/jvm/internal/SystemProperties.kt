@@ -46,6 +46,6 @@ internal var newFakeOverridesImplementation = runCatching { // 'var' because the
  * Note: at the moment, using reflection for Kotlin built-in classes that are mapped to Java classes is not fully supported when this
  * property is enabled. Such classes will be seen as their corresponding Java counterparts.
  */
-internal val loadMetadataDirectly = runCatching {
+internal var loadMetadataDirectly = runCatching {
     System.getProperty("kotlin.reflect.jvm.loadMetadataDirectly")
 }.getOrNull()?.toBoolean() == true
