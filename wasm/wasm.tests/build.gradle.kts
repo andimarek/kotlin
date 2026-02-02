@@ -457,7 +457,8 @@ projectTests {
 
     testData(project(":compiler").isolated, "testData/diagnostics")
     testData(project(":compiler").isolated, "testData/codegen")
-    testData(project(":compiler").isolated, "testData/debug/stepping")
+    // TODO re-check this
+    testData(project(":compiler").isolated, "testData/debug")
     testData(project(":compiler").isolated, "testData/ir/irText")
     testData(project(":compiler").isolated, "testData/loadJava")
     testData(project(":compiler").isolated, "testData/klib/partial-linkage")
