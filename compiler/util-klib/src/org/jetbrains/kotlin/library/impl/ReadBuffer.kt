@@ -14,18 +14,20 @@ sealed class ReadBuffer {
 
     fun <T> use(block: (ByteBuffer) -> T): T {
         require(!isUsingBuffer) { "use {} cannot be called recursively." }
-        isUsingBuffer = true
+        try {
+            isUsingBuffer = true
 
-        val tmpBuffer = getTemporaryBuffer()
-        tmpBuffer.position(lastPosition)
-        val result = block(tmpBuffer)
-        lastPosition = tmpBuffer.position()
-
-        isUsingBuffer = false
-        return result
+            val tmpBuffer = ensureBuffer()
+            tmpBuffer.position(lastPosition)
+            val result = block(tmpBuffer)
+            lastPosition = tmpBuffer.position()
+            return result
+        } finally {
+            isUsingBuffer = false
+        }
     }
 
-    abstract fun getTemporaryBuffer(): ByteBuffer
+    protected abstract fun ensureBuffer(): ByteBuffer
 
     /**
      * Allows reading data directly from the byte array [bytes].
@@ -34,7 +36,7 @@ sealed class ReadBuffer {
     class MemoryBuffer(bytes: ByteArray) : ReadBuffer() {
         private val buffer: ByteBuffer = ByteBuffer.wrap(bytes)
 
-        override fun getTemporaryBuffer() = buffer
+        override fun ensureBuffer() = buffer
     }
 
     /**
@@ -49,10 +51,10 @@ sealed class ReadBuffer {
      * of occasional reads from [ReadBuffer].
      */
     class OnDemandMemoryBuffer(private val loadBytes: () -> ByteArray) : ReadBuffer() {
-        private var cachedBuffer: SoftReference<ByteBuffer>? = null
+        private var cachedBuffer: SoftReference<ByteBuffer?> = SoftReference(null)
 
-        override fun getTemporaryBuffer(): ByteBuffer {
-            var buffer = cachedBuffer?.get()
+        override fun ensureBuffer(): ByteBuffer {
+            var buffer = cachedBuffer.get()
             if (buffer != null) {
                 return buffer
             }
