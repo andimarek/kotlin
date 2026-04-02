@@ -618,10 +618,14 @@ internal class ExportModelGenerator(private val config: TypeScriptExportConfig) 
                     // @JsStatic companion members are exported below
                     continue
                 }
-                val implementationStatus by lazy { member.getImplementationStatus(klass) }
 
-                fun hasDefaultImplementationIn(klass: KaClassSymbol) =
-                    klass.classKind == KaClassKind.INTERFACE && implementationStatus == ImplementationStatus.INHERITED_OR_SYNTHESIZED
+                val lazyImplementationState by lazy { member.implementationState(klass) }
+
+                fun hasDefaultImplementationIn(klass: KaClassSymbol): Boolean {
+                    if (klass.classKind != KaClassKind.INTERFACE) return false
+                    val implementationState = lazyImplementationState ?: return false
+                    return implementationState.hasInheritedImplementation && implementationState.mustBeImplemented
+                }
 
                 val original = member.fakeOverrideOriginal
                 val actualParent = original.containingDeclaration as? KaClassSymbol ?: continue
