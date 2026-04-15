@@ -1,6 +1,7 @@
 com/intellij/psi/PsiPolyVariantReference
 com/intellij/psi/ResolveResult
 com/intellij/psi/impl/source/resolve/ResolveCache$PolyVariantResolver
+org/jetbrains/kotlin/kdoc/psi/impl/KDocName
 org/jetbrains/kotlin/name/Name
 org/jetbrains/kotlin/psi/KtElement
 org/jetbrains/kotlin/psi/KtImplementationDetail

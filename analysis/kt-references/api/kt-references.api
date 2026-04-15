@@ -20,6 +20,7 @@ public abstract class org/jetbrains/kotlin/idea/references/KDocReferenceBase : o
 	public fun <init> (Lorg/jetbrains/kotlin/kdoc/psi/impl/KDocName;)V
 	public fun canRename ()Z
 	public fun getCanonicalText ()Ljava/lang/String;
+	public synthetic fun getElement ()Lorg/jetbrains/kotlin/kdoc/psi/impl/KDocName;
 	public fun getRangeInElement ()Lcom/intellij/openapi/util/TextRange;
 	public fun getResolvesByNames ()Ljava/util/Collection;
 	public fun resolve ()Lcom/intellij/psi/PsiElement;

@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.analysis.api.descriptors.components
 
+import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationTarget
 import org.jetbrains.kotlin.analysis.api.components.KaReturnValueStatus
 import org.jetbrains.kotlin.analysis.api.descriptors.KaFe10Session
 import org.jetbrains.kotlin.analysis.api.descriptors.components.base.KaFe10SessionComponent
@@ -153,6 +154,11 @@ internal class KaFe10SymbolInformationProvider(
             if (descriptor?.canBeReferencedViaImport() != true) return null
 
             return descriptor.getImportableDescriptor().fqNameSafe
+        }
+
+    override val KaSymbol.defaultAnnotationTargets: Set<KaAnnotationTarget>
+        get() = withValidityAssertion {
+            throw NotImplementedError("Property is not implemented for FE 1.0")
         }
 
     /**
