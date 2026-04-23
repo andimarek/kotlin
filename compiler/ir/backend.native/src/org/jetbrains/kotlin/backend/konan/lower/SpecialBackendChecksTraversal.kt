@@ -37,7 +37,9 @@ import org.jetbrains.kotlin.ir.util.isNullable
 import org.jetbrains.kotlin.ir.visitors.IrVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.NativeStandardInteropNames
 import org.jetbrains.kotlin.name.NativeStandardInteropNames.objCActionClassId
+import org.jetbrains.kotlin.name.isSubpackageOf
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.utils.fileUtils.descendantRelativeTo
 import java.io.File
@@ -286,6 +288,26 @@ private class BackendChecker(
                         "can't override '${method.name}', override $correspondingObjCMethod instead",
                 )
             }
+        }
+    }
+
+    private fun checkStdlibObjCClass(irClass: IrClass) {
+        // Only check stdlib classes.
+        val pkgFqName = irClass.packageFqName ?: return
+        if (!pkgFqName.isSubpackageOf(FqName("kotlin")) && !pkgFqName.isSubpackageOf(FqName("kotlinx.cinterop"))) return
+
+        // Ensure that allStdlibClassesImplementingObjCObject list is up to date.
+        val isObjCClass = (listOf(irClass) + irClass.getAllSuperclasses())
+            .any { it.classId == NativeStandardInteropNames.objCObjectClassId }
+        val isRegisteredAsObjCClass = irClass.fqNameWhenAvailable in allStdlibClassesImplementingObjCObject
+        if (isObjCClass != isRegisteredAsObjCClass) {
+            reportError(
+                irClass, "Looks like the `allStdlibClassesImplementingObjCObject` list needs to be updated.\n" +
+                        "We need to maintain a special property inside the compiler, listing all Stdlib classes that " +
+                        "(possibly indirectly) inherit from ObjCObject. Apparently \"${irClass.fqNameWhenAvailable}\" either begun or " +
+                        "stopped being a subclass of ObjCObject, so please update the list accordingly.\n" +
+                        "Note that this change may also require advancing the bootstrap compiler used to compile the Stdlib."
+            )
         }
     }
 
@@ -610,6 +632,7 @@ private class BackendChecker(
         if (!declaration.isExpect && declaration.isKotlinObjCClass()) {
             checkKotlinObjCClass(declaration)
         }
+        checkStdlibObjCClass(declaration)
         super.visitClass(declaration)
 
     }
