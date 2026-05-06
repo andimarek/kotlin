@@ -708,7 +708,7 @@ internal object KDocReferenceResolver {
                 extensions.filter { callable ->
                     if (!callable.isExtension) return@filter false
                     val expectedReceiverType = callable.receiverType ?: return@filter false
-                    createUnificationSubstitutor(
+                    createSubtypingUnificationSubstitutor(
                         actualReceiverType,
                         expectedReceiverType,
                         KaUnificationSubstitutorPolicy.EXISTENTIAL
