@@ -711,7 +711,7 @@ internal object KDocReferenceResolver {
                     createSubtypingUnificationSubstitutor(
                         actualReceiverType,
                         expectedReceiverType,
-                        KaUnificationSubstitutorPolicy.EXISTENTIAL
+                        KaUnificationSubstitutorPolicy.ASSIGN_ALL
                     ) != null
                 }.toResolveResults(receiverClassReference = receiverClassSymbol).ifEmpty { null }
             }
