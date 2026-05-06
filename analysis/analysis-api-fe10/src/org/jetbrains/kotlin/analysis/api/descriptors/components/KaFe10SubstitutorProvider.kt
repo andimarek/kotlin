@@ -25,15 +25,15 @@ internal class KaFe10SubstitutorProvider(
     }
 
     override fun createSubtypingUnificationSubstitutor(
-        candidateType: KaType,
-        targetType: KaType,
+        leftType: KaType,
+        rightType: KaType,
         constructionPolicy: KaUnificationSubstitutorPolicy,
     ): KaSubstitutor = withValidityAssertion {
         throw UnsupportedOperationException("This operation is not supported in the K1 version of the Analysis API.")
     }
 
     override fun createSubtypingUnificationSubstitutor(
-        candidateTypesToTargetTypes: List<Pair<KaType, KaType>>,
+        leftTypesToRightTypes: List<Pair<KaType, KaType>>,
         constructionPolicy: KaUnificationSubstitutorPolicy
     ): KaSubstitutor = withValidityAssertion {
         throw UnsupportedOperationException("This operation is not supported in the K1 version of the Analysis API.")
