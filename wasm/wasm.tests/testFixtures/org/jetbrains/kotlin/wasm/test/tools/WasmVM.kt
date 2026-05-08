@@ -19,6 +19,8 @@ internal sealed class WasmVM(
     val entryPointIsJsFile: Boolean
 ) {
     protected val tool = ExternalTool(System.getProperty(property))
+    val vmName: String
+        get() = javaClass.simpleName
 
     abstract fun run(
         entryFile: String,
