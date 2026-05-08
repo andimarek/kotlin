@@ -1,7 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 // ISSUE: KT-58310
 // LANGUAGE: -CheckLambdaAgainstTypeVariableContradictionInResolution
-// LATEST_LV_DIFFERENCE
 
 class Inv<T>
 
@@ -25,9 +24,9 @@ fun testAny(box: Inv<Any>) {
 }
 
 fun testFunctionType(box: Inv<() -> Any?>) {
-    <!OVERLOAD_RESOLUTION_AMBIGUITY!>foo<!>(box) { "hello" }
-    <!OVERLOAD_RESOLUTION_AMBIGUITY!>bar<!>({ "hello" }, box)
-    box.<!OVERLOAD_RESOLUTION_AMBIGUITY!>qux<!> { "hello" }
+    foo(box) { "hello" }
+    bar({ "hello" }, box)
+    box.qux { "hello" }
 }
 
 // Check error when there is only one candidate
