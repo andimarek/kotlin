@@ -1,8 +1,7 @@
 // LANGUAGE: +CompanionBlocksAndExtensions
-// IGNORE_BACKEND: WASM_JS, WASM_WASI, JS_IR, JS_IR_ES6
+// IGNORE_BACKEND: WASM_JS, WASM_WASI
 // Notes:
 // WASM "Onull"
-// JS "Oundefined"
 
 class A {
     companion {

@@ -1,5 +1,5 @@
 // LANGUAGE: +CompanionBlocksAndExtensions
-// IGNORE_BACKEND: WASM_JS, WASM_WASI, JS_IR, JS_IR_ES6
+// IGNORE_BACKEND: WASM_JS, WASM_WASI
 // WITH_SDLIB
 // Notes:
 // WASM gets 0 from A.compBlockValI instead of 1

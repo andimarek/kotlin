@@ -1,6 +1,6 @@
 // WITH_STDLIB
 // LANGUAGE: +CompanionBlocksAndExtensions
-// IGNORE_BACKEND: WASM_JS, WASM_WASI, JS_IR, JS_IR_ES6
+// IGNORE_BACKEND: WASM_JS, WASM_WASI
 import kotlin.test.assertEquals
 import kotlin.reflect.*
 
