@@ -58,6 +58,8 @@ import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.jvm.JvmConstants
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmClassSignature
+import org.jetbrains.kotlin.serialization.deserialization.ProtoEnumFlags
+import org.jetbrains.kotlin.serialization.deserialization.descriptorVisibility
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
 import org.jetbrains.org.objectweb.asm.*
 import org.jetbrains.org.objectweb.asm.commons.Method
@@ -276,6 +278,14 @@ class ClassCodegen private constructor(
     }
 
     private fun generateKotlinMetadataAnnotation() {
+        fun addSyntheticClassVisibilityFlags(extraFlags: Int): Int {
+            val visibilityFlagsValue = ProtoEnumFlags.descriptorVisibility(irClass.visibility.normalize()).number
+            val maxVisibilityBits =
+                1 + JvmAnnotationNames.METADATA_SYNTHETIC_CLASS_VISIBILITY_BIT_LAST - JvmAnnotationNames.METADATA_SYNTHETIC_CLASS_VISIBILITY_BIT_FIRST
+            assert(visibilityFlagsValue in 0 until (1 shl maxVisibilityBits)) { "Visibility flag value is out of range: $visibilityFlagsValue" }
+            return extraFlags or (visibilityFlagsValue shl JvmAnnotationNames.METADATA_SYNTHETIC_CLASS_VISIBILITY_BIT_FIRST)
+        }
+
         val facadeClassName = irClass.multifileFacadeForPart
         val metadata = irClass.metadata
         val entry = irClass.fileParent.fileEntry
@@ -299,6 +309,10 @@ class ClassCodegen private constructor(
         }
         if (metadata is MetadataSource.Script) {
             extraFlags = extraFlags or JvmAnnotationNames.METADATA_SCRIPT_FLAG
+        }
+
+        if (kind == KotlinClassHeader.Kind.SYNTHETIC_CLASS) {
+            extraFlags = addSyntheticClassVisibilityFlags(extraFlags)
         }
 
         // There are four kinds of classes which are regenerated during inlining.
