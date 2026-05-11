@@ -35,12 +35,12 @@ import kotlin.reflect.full.primaryConstructor
  *
  * The test reuses the regular test infrastructure to retrieve types from expressions in the test data.
  * The test builds a `caret -> type` mapping from the test data and then runs a corresponding DSL test from
- * [TypeCreatorDslTestRenderer.TestCases]. Each `caret` in the test file should mark a `KtExpression`, return type of which should be used
+ * [DslTypeCreationTestCases]. Each `caret` in the test file should mark a `KtExpression`, return type of which should be used
  * in the type construction.
  *
  * If the test file is named `A.kt` and is placed inside `analysis/analysis-api/testData/types/typeCreation/byDsl/classType`,
- * then there should be a function called `testA` in the `ClassTypeCreatorDslTestCases` subclass of [TypeCreatorDslTestRenderer.TestCases],
- * which retrieves types from [TypeCreatorDslTestRenderer.TestCases.caretToType] mapping and returns some value constructed from them using
+ * then there should be a function called `testA` in the `ClassTypeCreatorDslTestCases` subclass of [DslTypeCreationTestCases],
+ * which retrieves types from [DslTypeCreationTestCases.caretToType] mapping and returns some value constructed from them using
  * the type-building DSL. The returned value is then rendered in the output file `A.txt`. The mapping from directories (`/classType`) to the
  * corresponding test cases (`ClassTypeCreatorDslTestCases`) is located in [TypeCreatorDslTestRenderer.testClassesMapping].
  */
@@ -150,7 +150,7 @@ object TypeCreatorDslTestRenderer {
             .call(testClassInstance)
     }
 
-    private val testClassesMapping: Map<String, KClass<out TestCases>> = mapOf(
+    private val testClassesMapping: Map<String, KClass<out DslTypeCreationTestCases>> = mapOf(
         "classType" to ClassTypeCreatorDslTestCases::class,
         "dynamicType" to DynamicTypeCreatorDslTestCases::class,
         "starTypeProjection" to StarTypeProjectionCreatorDslTestCases::class,
@@ -164,18 +164,18 @@ object TypeCreatorDslTestRenderer {
         "intersectionType" to IntersectionTypeCreatorDslTestCases::class,
         "functionType" to FunctionTypeCreatorDslTestCases::class,
     )
+}
 
-    sealed class TestCases(protected val session: KaSession, private val caretToType: Map<String, KaType>) {
-        protected fun getTypeByCaret(label: String): KaType {
-            return caretToType[label]?.abbreviationOrSelf ?: error("No type for `$label`")
-        }
+sealed class DslTypeCreationTestCases(protected val session: KaSession, private val caretToType: Map<String, KaType>) {
+    protected fun getTypeByCaret(label: String): KaType {
+        return caretToType[label]?.abbreviationOrSelf ?: error("No type for `$label`")
+    }
 
-        protected fun getClassLikeSymbolByCaret(label: String): KaClassLikeSymbol {
-            return caretToType[label]?.abbreviationOrSelf?.symbol ?: error("No symbol for `$label`")
-        }
+    protected fun getClassLikeSymbolByCaret(label: String): KaClassLikeSymbol {
+        return caretToType[label]?.abbreviationOrSelf?.symbol ?: error("No symbol for `$label`")
+    }
 
-        protected fun getTypeParameterSymbolByCaret(label: String): KaTypeParameterSymbol {
-            return (caretToType[label] as? KaTypeParameterType)?.symbol ?: error("Type under `$label` is not a type parameter type")
-        }
+    protected fun getTypeParameterSymbolByCaret(label: String): KaTypeParameterSymbol {
+        return (caretToType[label] as? KaTypeParameterType)?.symbol ?: error("Type under `$label` is not a type parameter type")
     }
 }

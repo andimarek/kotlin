@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.types.Variance
 
 @Suppress("UNUSED")
 class TypeProjectionCreatorDslTestCases(session: KaSession, caretToType: Map<String, KaType>) :
-    TypeCreatorDslTestRenderer.TestCases(session, caretToType) {
+    DslTypeCreationTestCases(session, caretToType) {
     fun testIntWithInVariance(): KaTypeArgumentWithVariance {
         val type = getTypeByCaret("type")
         return session.typeCreator.typeProjection(Variance.IN_VARIANCE, type)
