@@ -404,6 +404,15 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
     // endregion
 }
 
+/**
+ * The base test checking type modification.
+ * It reuses the existing infrastructure for DSL-based type creation tests ([AbstractTypeCreatorDslTest]).
+ * Specifically, it creates the initial type using one of [DslTypeCreationTestCases], then it performs modification, and checks the
+ * text representation of the resulting type.
+ *
+ * Tests should have the following naming: "<directoryName> <testDataFileName> +<modificationName>"
+ * (modification component is separated with a plus sign), where `testDataFileName` is a base name of the test (without '.kt' or '.kts').
+ */
 abstract class AbstractTypeModificationDslTestBase(testDirPathString: String) : AbstractAnalysisApiExecutionTest(testDirPathString) {
     private companion object {
         private val TEST_NAME_REGEX = Regex("(\\w+) (\\w+) \\+(\\w+)")
