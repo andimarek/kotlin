@@ -76,8 +76,6 @@ private class AnalysisApiExecutionTestExtension : BeforeTestExecutionCallback, A
         )
     }
 
-    private class State(val testServices: TestServices, val mainFile: KtFile?, val mainModule: KtTestModule?)
-
     private var cachedTestEnvironment = ThreadLocal<AnalysisApiExecutionTestEnvironment>()
 
     override fun supportsParameter(parameterContext: ParameterContext, extensionContext: ExtensionContext): Boolean {
