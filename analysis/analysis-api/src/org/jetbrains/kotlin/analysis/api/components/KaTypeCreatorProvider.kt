@@ -38,8 +38,7 @@ public interface KaTypeCreatorProvider : KaSessionComponent {
     /**
      * Creates a copy of this [KaClassType] with modifications applied via the [init] block.
      *
-     * The builder is pre-populated with the properties of the original type
-     * (nullability, type arguments, and annotations).
+     * The builder is pre-populated with the properties of the original type.
      * The [init] block can then selectively override these properties.
      *
      * #### Example:
@@ -58,8 +57,7 @@ public interface KaTypeCreatorProvider : KaSessionComponent {
     /**
      * Creates a copy of this [KaFunctionType] with modifications applied via the [init] block.
      *
-     * The builder is pre-populated with the properties of the original type
-     * (nullability, suspend/reflect flags, context parameters, receiver type, value parameters, return type, and annotations).
+     * The builder is pre-populated with the properties of the original type.
      * The [init] block can then selectively override these properties.
      *
      * #### Example:
@@ -78,8 +76,7 @@ public interface KaTypeCreatorProvider : KaSessionComponent {
     /**
      * Creates a copy of this [KaTypeParameterType] with modifications applied via the [init] block.
      *
-     * The builder is pre-populated with the properties of the original type
-     * (nullability and annotations).
+     * The builder is pre-populated with the properties of the original type.
      * The [init] block can then selectively override these properties.
      *
      * #### Example:
@@ -98,8 +95,7 @@ public interface KaTypeCreatorProvider : KaSessionComponent {
     /**
      * Creates a copy of this [KaCapturedType] with modifications applied via the [init] block.
      *
-     * The builder is pre-populated with the properties of the original type
-     * (nullability and annotations).
+     * The builder is pre-populated with the properties of the original type.
      * The [init] block can then selectively override these properties.
      *
      * @see KaTypeCreator.capturedType
@@ -153,8 +149,7 @@ public val typeCreator: KaTypeCreator
 /**
  * Creates a copy of this [KaClassType] with modifications applied via the [init] block.
  *
- * The builder is pre-populated with the properties of the original type
- * (nullability, type arguments, and annotations).
+ * The builder is pre-populated with the properties of the original type.
  * The [init] block can then selectively override these properties.
  *
  * #### Example:
@@ -182,8 +177,7 @@ public fun <T : KaClassType> T.copy(init: KaClassTypeBuilder.() -> Unit): KaClas
 /**
  * Creates a copy of this [KaFunctionType] with modifications applied via the [init] block.
  *
- * The builder is pre-populated with the properties of the original type
- * (nullability, suspend/reflect flags, context parameters, receiver type, value parameters, return type, and annotations).
+ * The builder is pre-populated with the properties of the original type.
  * The [init] block can then selectively override these properties.
  *
  * #### Example:
@@ -211,8 +205,7 @@ public fun KaFunctionType.copy(init: KaFunctionTypeBuilder.() -> Unit): KaFuncti
 /**
  * Creates a copy of this [KaTypeParameterType] with modifications applied via the [init] block.
  *
- * The builder is pre-populated with the properties of the original type
- * (nullability and annotations).
+ * The builder is pre-populated with the properties of the original type.
  * The [init] block can then selectively override these properties.
  *
  * #### Example:
@@ -240,8 +233,7 @@ public fun KaTypeParameterType.copy(init: KaTypeParameterTypeBuilder.() -> Unit)
 /**
  * Creates a copy of this [KaCapturedType] with modifications applied via the [init] block.
  *
- * The builder is pre-populated with the properties of the original type
- * (nullability and annotations).
+ * The builder is pre-populated with the properties of the original type.
  * The [init] block can then selectively override these properties.
  *
  * @see KaTypeCreator.capturedType
