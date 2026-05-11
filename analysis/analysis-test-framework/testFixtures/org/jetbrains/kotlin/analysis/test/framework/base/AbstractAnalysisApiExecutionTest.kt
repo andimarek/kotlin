@@ -157,8 +157,6 @@ private class AnalysisApiExecutionTestExtension : BeforeTestExecutionCallback, A
         }
 
         update(testInstance.javaClass)
-
-
     }
 
     private fun getTestFilePath(testDirPathString: String, testFileName: String): Path {
