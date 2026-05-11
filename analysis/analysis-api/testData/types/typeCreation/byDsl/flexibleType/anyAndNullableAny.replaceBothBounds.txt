@@ -20,14 +20,14 @@ KaFlexibleType:
   upperBound: KaUsualClassType:
     abbreviation: null
     annotations: []
-    classId: kotlin/Any
+    classId: kotlin/String
     qualifiers: [
       KaResolvedClassTypeQualifier:
-        name: Any
-        symbol: KaNamedClassSymbol(kotlin/Any)
+        name: String
+        symbol: KaNamedClassSymbol(kotlin/String)
         typeArguments: []
     ]
-    symbol: KaNamedClassSymbol(kotlin/Any)
+    symbol: KaNamedClassSymbol(kotlin/String)
     typeArguments: []
     isMarkedNullable: true
     isNullable: true
@@ -37,4 +37,4 @@ KaFlexibleType:
   hasFlexibleNullability: true
 
 Rendered type:
-(kotlin.String..kotlin.Any?)
+kotlin.String!

@@ -381,7 +381,7 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
     fun `flexibleType anyAndNullableAny +replaceBothBounds`() = test<KaFlexibleType> { type ->
         type.copy {
             lowerBound = classType(StandardClassIds.String)
-            upperBound = classType(StandardClassIds.Any) { isMarkedNullable = true }
+            upperBound = classType(StandardClassIds.String) { isMarkedNullable = true }
         }
     }
 
