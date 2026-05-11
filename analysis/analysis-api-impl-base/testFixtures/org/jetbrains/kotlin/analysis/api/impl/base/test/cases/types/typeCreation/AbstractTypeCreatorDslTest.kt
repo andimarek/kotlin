@@ -50,7 +50,7 @@ abstract class AbstractTypeCreatorDslTest : AbstractAnalysisApiBasedTest() {
             val testInfo = testServices.testInfo
             assert(testInfo.methodName.startsWith("test"))
 
-            TypeCreatorDslTestRenderer.render(
+            TypeCreatorDslTestRenderer.createdTypePresentation(
                 mainFile,
                 testServices,
                 directoryName = testInfo.className.substringAfterLast("$").decapitalizeAsciiOnly(),
@@ -64,7 +64,7 @@ abstract class AbstractTypeCreatorDslTest : AbstractAnalysisApiBasedTest() {
 
 object TypeCreatorDslTestRenderer {
     context(_: KaSession)
-    fun render(
+    fun createdTypePresentation(
         mainFile: KtFile,
         testServices: TestServices,
         directoryName: String,
