@@ -162,8 +162,6 @@ internal fun WasmVM.runWithCaughtExceptions(
     jsFilePaths: List<String>,
     workingDirectory: File,
 ): Throwable? {
-    val vmName = javaClass.simpleName
-
     try {
         if (debugMode >= DebugMode.DEBUG) {
             println(" ------ Run in $vmName")
