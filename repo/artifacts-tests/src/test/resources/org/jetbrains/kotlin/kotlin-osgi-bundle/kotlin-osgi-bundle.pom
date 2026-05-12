@@ -47,6 +47,25 @@
                             <includeGroupIds>${project.parent.groupId}</includeGroupIds>
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                             <excludes>**/MANIFEST.MF</excludes>
+                            <excludes>META-INF/versions/*/module-info.class</excludes>
+                            <excludeArtifactIds>kotlin-stdlib</excludeArtifactIds>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>unpack-kotlin-stdlib</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <artifactId>kotlin-stdlib</artifactId>
+                                    <version>${kotlin.version}</version>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <excludes>**/MANIFEST.MF</excludes>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                     <execution>
