@@ -385,6 +385,27 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
     }
 
     @Test
+    @TestMetadata("flexibleType/intAndNullableInt.kt")
+    fun `flexibleType intAndNullableInt +replaceUpperBoundSame`() = test<KaFlexibleType> { type ->
+        type.copy {
+            upperBound = classType(StandardClassIds.Int) { isMarkedNullable = false }
+        }
+    }
+
+    @Test
+    @TestMetadata("flexibleType/intAndNullableInt.kt")
+    fun `flexibleType intAndNullableInt +replaceUpperBoundSameDifferentAnnotations`() = test<KaFlexibleType> { type ->
+        type.copy {
+            lowerBound = classType(StandardClassIds.Int) {
+                annotation(ClassId.fromString("Foo"))
+            }
+            upperBound = classType(StandardClassIds.Int) {
+                annotation(ClassId.fromString("Bar"))
+            }
+        }
+    }
+
+    @Test
     @TestMetadata("flexibleType/anyAndNullableAny.kt")
     fun `flexibleType anyAndNullableAny +replaceBothBounds`() = test<KaFlexibleType> { type ->
         type.copy {

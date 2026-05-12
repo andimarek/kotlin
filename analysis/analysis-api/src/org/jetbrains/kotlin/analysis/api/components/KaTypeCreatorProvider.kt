@@ -117,7 +117,9 @@ public interface KaTypeCreatorProvider : KaSessionComponent {
     /**
      * Creates a copy of this [KaFlexibleType] with modifications applied via the [init] block.
      * Similarly to [KaTypeCreator.flexibleType], returns `null` if the lower bound is not a subtype of the upper bound.
-     * In addition, the function returns `null` if the new bounds are equal.
+     *
+     * In addition, the function returns `null` if the new bounds are equal, as such flexible types are not allowed.
+     * If bounds can become 
      *
      * The builder is pre-populated with the bounds and annotations of the original type.
      * The [init] block can then selectively override these properties.

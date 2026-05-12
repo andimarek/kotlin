@@ -132,7 +132,7 @@ abstract class KaBaseTypeCreatorProvider<T : KaSession> : KaBaseSessionComponent
             typeCreator.flexibleType(this@copy) {
                 annotations(sourceAnnotationClassIds)
                 init()
-            } as KaFlexibleType?
+            } as? KaFlexibleType
         }
     }
 }
