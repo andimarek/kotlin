@@ -1,10 +1,7 @@
 KaType
 KaCapturedType:
   abbreviation: null
-  annotations: [
-    Anno()
-      psi: null
-  ]
+  annotations: []
   projection: *
   isMarkedNullable: false
   isNullable: true

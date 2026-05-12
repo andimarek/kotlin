@@ -321,6 +321,14 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
     }
 
     @Test
+    @TestMetadata("capturedType/starProjection.kt")
+    fun `capturedType starProjection +addNonExistentAnnotation`() = test<KaCapturedType> { type ->
+        type.copy {
+            annotation(ClassId.fromString("NonExistentAnno"))
+        }
+    }
+
+    @Test
     @TestMetadata("capturedType/userTypeInProjection.kt")
     fun `capturedType userTypeInProjection +markNullable`() = test<KaCapturedType> { type ->
         type.copy {
