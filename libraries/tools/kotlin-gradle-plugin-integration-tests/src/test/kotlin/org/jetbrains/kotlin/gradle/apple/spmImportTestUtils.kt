@@ -467,15 +467,10 @@ private fun KotlinMultiplatformExtension.configureSwiftPmTestArgs(
     project.tasks
         .withType(FetchSyntheticImportProjectPackages::class.java)
         .configureEach { task ->
-            task.additionalXcodeArgs.set(
-                listOf(
-                    "-packageFingerprintPolicy", "warn",
-                    "-packageCachePath", cacheDirFile.path,
-                )
-            )
             task.additionalSwiftPackageResolveArgs.set(
                 listOf(
                     "--resolver-fingerprint-checking", "warn",
+                    "--cache-path", cacheDirFile.path,
                 )
             )
         }
