@@ -26,9 +26,10 @@ fun box() {
 // test.kt:11 box:
 
 // EXPECTATIONS WASM
-// test.kt:8 $box: (4)
-// test.kt:4 $foo: $block:(ref $box$lambda)=(ref $box$lambda) (14, 11, 11, 11, 11, 11, 11, 14, 14, 14, 14, 14, 14, 14, 14, 14)
-// test.kt:9 $box$lambda.invoke: $<this>:(ref $box$lambda)=(ref $box$lambda), $$this$foo:i64=i64 (8, 8, 8, 12)
-// test.kt:4 $foo: $block:(ref $box$lambda)=(ref $box$lambda) (14, 14, 14, 14, 14, 14, 14, 14, 14, 4)
+// test.kt:8 $box: (8, 4)
+// test.kt:4 $foo: $block:(ref $kotlin.test.Function1)=(ref $kotlin.test.Function1) (14, 11, 11, 11, 11, 11, 11, 14, 14, 14, 14, 14, 14, 14, 14, 14)
+// test.kt:8 $box$lambda.invoke: $$this$foo:(ref $kotlin.Long)=(ref $kotlin.Long) (8, 8, 8, 8)
+// test.kt:9 $box$lambda.invoke: $$this$foo:(ref $kotlin.Long)=(ref $kotlin.Long) (8, 8, 8, 12)
+// test.kt:4 $foo: $block:(ref $kotlin.test.Function1)=(ref $kotlin.test.Function1) (14, 14, 14, 14, 14, 14, 14, 14, 14, 4)
 // test.kt:8 $box: (4)
 // test.kt:11 $box: (1)
