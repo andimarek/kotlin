@@ -3,7 +3,7 @@
 
 private const val SYNTHETIC_CLASS_VISIBILITY_SHIFT = 8
 private const val SYNTHETIC_CLASS_VISIBILITY_MASK = 0b111
-private const val INTERNAL_VISIBILITY = 0
+private const val LOCAL_VISIBILITY = 5
 
 private fun syntheticClassVisibility(javaClass: Class<*>): Int {
     val extraInt = javaClass.getAnnotation(Metadata::class.java).extraInt
@@ -16,9 +16,8 @@ fun box(): String {
     val ann = Ann("OK")
 
     val visibility = syntheticClassVisibility(ann.javaClass)
-    // TODO maybe make it LOCAL instead
-    if (visibility != INTERNAL_VISIBILITY) {
-        return "Fail: expected INTERNAL visibility (0), got $visibility"
+    if (visibility != LOCAL_VISIBILITY) {
+        return "Fail: expected LOCAL visibility (5), got $visibility"
     }
 
     return ann.value
