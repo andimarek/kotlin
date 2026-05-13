@@ -74,7 +74,7 @@ internal class KClassImpl<T : Any>(
             if (loadMetadataDirectly) {
                 jClass.getAnnotation(Metadata::class.java)?.let { metadata ->
                     (KotlinClassMetadata.readLenient(metadata) as? KotlinClassMetadata.Class)?.kmClass
-                }
+                } ?: readBuiltinClassMetadata(classId.asString())
             } else {
                 val descriptor = descriptor
                 if (descriptor is FunctionClassDescriptor) {
