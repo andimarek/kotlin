@@ -800,4 +800,34 @@ tasks.withType<Test>().configureEach {
     extensions.configure<JacocoTaskExtension> {
         isEnabled = testCoverageEnabled
     }
+    // Don't fail the build on test failures when collecting coverage: JaCoCo writes the .exec on
+    // shutdown regardless of test outcome, and the dependent coverage report task is more useful
+    // than the failure signal in this mode.
+    if (testCoverageEnabled) ignoreFailures = true
+}
+
+// Outgoing variant exposing `functionalTest`'s `.exec` file to :kotlin-gradle-plugin-test-coverage,
+// matching `jacoco-report-aggregation`'s attribute schema. This replaces the previous direct read of
+// `kgpProject.layout.buildDirectory.dir("jacoco")` from the aggregator and makes the report task
+// depend on `functionalTest` via Gradle's dependency graph, restoring correct task ordering and
+// up-to-date checks across projects.
+configurations.consumable("functionalTestCoverageDataElements") {
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class, Category.VERIFICATION))
+        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, objects.named(VerificationType::class, VerificationType.JACOCO_RESULTS))
+        attribute(TestSuiteName.TEST_SUITE_NAME_ATTRIBUTE, objects.named(TestSuiteName::class, "functionalTest"))
+    }
+    outgoing.artifact(layout.buildDirectory.file("jacoco/functionalTest.exec")) {
+        type = ArtifactTypeDefinition.BINARY_DATA_TYPE
+        builtBy(tasks.named("functionalTest"))
+    }
+}
+
+// The `common` source set isn't part of `mainSourceElements`, so jacoco-report-aggregation's
+// source-dir discovery misses it. Class outputs from `common` are already exposed via the
+// `classes` secondary variant of `runtimeElements` by the gradle-plugin convention plugin.
+configurations.named("mainSourceElements") {
+    sourceSets.getByName("common").allSource.srcDirs.forEach { srcDir ->
+        outgoing.artifact(srcDir) { type = ArtifactTypeDefinition.DIRECTORY_TYPE }
+    }
 }

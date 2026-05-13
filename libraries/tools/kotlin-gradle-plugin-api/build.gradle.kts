@@ -192,3 +192,13 @@ tasks.withType<Jar>().configureEach {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 }
+
+// Expose `common` source dirs to :kotlin-gradle-plugin-test-coverage via the standard
+// `mainSourceElements` outgoing variant, so jacoco-report-aggregation's source discovery picks them
+// up alongside `main`. Class outputs are already exposed via `runtimeElements`'s `classes`
+// secondary variant set up by the gradle-plugin convention plugin.
+configurations.named("mainSourceElements") {
+    sourceSets.getByName("common").allSource.srcDirs.forEach { srcDir ->
+        outgoing.artifact(srcDir) { type = ArtifactTypeDefinition.DIRECTORY_TYPE }
+    }
+}

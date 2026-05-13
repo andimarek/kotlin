@@ -467,6 +467,9 @@ tasks.withType<Test>().configureEach {
 
         inputs.files(jacocoAgent)
 
+        // Let the coverage report run on the .exec file regardless of test outcome
+        ignoreFailures = true
+
         doFirst {
             jacocoOutputDir.get().asFile.mkdirs()
             systemProperty("jacocoRuntimeJar", jacocoRuntimeJar.absolutePath)
@@ -590,6 +593,28 @@ tasks.withType<Test>().configureEach {
 }
 
 excludeGradleEmbeddedStdlibFromTestTasksRuntimeClasspath()
+
+// Outgoing variant exposing the TestKit-produced `.exec` file to :kotlin-gradle-plugin-test-coverage,
+// matching `jacoco-report-aggregation`'s attribute schema. The file is produced by the JaCoCo agent
+// injected into TestKit child Gradle daemons (see testbase/testDsl.kt::addJacocoAgentIfEnabled),
+// not by a Test task's own JVM — that's why we expose it manually instead of letting jacoco
+// discover it from a Test task's JacocoTaskExtension.
+//
+// `builtBy(kgpAllParallelTests)` makes :kotlin-gradle-plugin-test-coverage:integrationCoverageReport
+// auto-trigger the full parallel integration test suite. Users who want a narrower subset can
+// invoke a specific test task (e.g. `kgpJvmTests`) themselves and then the report task — the .exec
+// file is shared across all 9 integration test tasks (JaCoCo agent uses `append=true`).
+configurations.consumable("integrationTestCoverageDataElements") {
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category::class, Category.VERIFICATION))
+        attribute(VerificationType.VERIFICATION_TYPE_ATTRIBUTE, objects.named(VerificationType::class, VerificationType.JACOCO_RESULTS))
+        attribute(TestSuiteName.TEST_SUITE_NAME_ATTRIBUTE, objects.named(TestSuiteName::class, "integrationTest"))
+    }
+    outgoing.artifact(layout.buildDirectory.file("jacoco/testkit/integration-tests.exec")) {
+        type = ArtifactTypeDefinition.BINARY_DATA_TYPE
+        builtBy(tasks.named("kgpAllParallelTests"))
+    }
+}
 
 val instrumentKgpJarsForCoverage by tasks.registering(InstrumentKgpJarsForCoverage::class) {
     description = "Instrument KGP JARs in Maven Local with JaCoCo offline probes for coverage collection"
