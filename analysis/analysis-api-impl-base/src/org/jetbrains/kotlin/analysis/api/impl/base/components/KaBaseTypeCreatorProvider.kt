@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
+import org.jetbrains.kotlin.analysis.api.types.KaUsualClassType
 import org.jetbrains.kotlin.analysis.api.types.typeCreation.KaClassTypeBuilder
 import org.jetbrains.kotlin.analysis.api.types.typeCreation.KaFunctionTypeBuilder
 import org.jetbrains.kotlin.analysis.api.types.typeCreation.KaTypeParameterTypeBuilder
@@ -32,6 +33,11 @@ abstract class KaBaseTypeCreatorProvider<T : KaSession> : KaBaseSessionComponent
             annotations(sourceAnnotationClassIds)
             init()
         } as KaClassType
+    }
+
+    @KaExperimentalApi
+    override fun KaUsualClassType.copy(init: KaClassTypeBuilder.() -> Unit): KaUsualClassType = withValidityAssertion {
+        (this@copy as KaClassType).copy(init) as KaUsualClassType
     }
 
     @KaExperimentalApi

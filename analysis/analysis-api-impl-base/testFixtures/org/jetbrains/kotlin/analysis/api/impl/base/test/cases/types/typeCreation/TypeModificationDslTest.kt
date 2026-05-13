@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
+import org.jetbrains.kotlin.analysis.api.types.KaUsualClassType
 import org.jetbrains.kotlin.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.jetbrains.kotlin.analysis.test.framework.base.AnalysisApiExecutionTestEnvironment
 import org.jetbrains.kotlin.analysis.test.framework.base.AnalysisApiTestEnvironmentStorage
@@ -34,7 +35,7 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
 
     @Test
     @TestMetadata("classType/intTypeMarkNullable.kt")
-    fun `classType intTypeMarkNullable +markNotNull`() = test<KaClassType> { type ->
+    fun `classType intTypeMarkNullable +markNotNull`() = test<KaUsualClassType> { type ->
         type.copy {
             isMarkedNullable = false
         }
@@ -58,7 +59,7 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
 
     @Test
     @TestMetadata("classType/userType.kt")
-    fun `classType userType +addAnnotation`() = test<KaClassType> { type ->
+    fun `classType userType +addAnnotation`() = test<KaUsualClassType> { type ->
         type.copy {
             annotation(ClassId.fromString("MyAnno"))
         }
@@ -66,7 +67,7 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
 
     @Test
     @TestMetadata("classType/userType.kt")
-    fun `classType userType +addNonExistentAnnotation`() = test<KaClassType> { type ->
+    fun `classType userType +addNonExistentAnnotation`() = test<KaUsualClassType> { type ->
         type.copy {
             annotation(ClassId.fromString("NonExistentAnno"))
         }
@@ -122,7 +123,7 @@ abstract class AbstractTypeModificationDslTest : AbstractTypeModificationDslTest
 
     @Test
     @TestMetadata("classType/genericTypeAliasWithIntArgument.kt")
-    fun `classType genericTypeAliasWithIntArgument +markNullable`() = test<KaClassType> { type ->
+    fun `classType genericTypeAliasWithIntArgument +markNullable`() = test<KaUsualClassType> { type ->
         type.copy {
             isMarkedNullable = true
         }
