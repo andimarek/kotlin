@@ -91,51 +91,6 @@ public interface KaTypeCreatorProvider : KaSessionComponent {
      */
     @KaExperimentalApi
     public fun KaTypeParameterType.copy(init: KaTypeParameterTypeBuilder.() -> Unit): KaTypeParameterType
-
-    /**
-     * Creates a copy of this [KaCapturedType] with modifications applied via the [init] block.
-     *
-     * The builder is pre-populated with the properties of the original type.
-     * The [init] block can then selectively override these properties.
-     *
-     * @see KaTypeCreator.capturedType
-     */
-    @KaExperimentalApi
-    public fun KaCapturedType.copy(init: KaCapturedTypeBuilder.() -> Unit): KaCapturedType
-
-    /**
-     * Creates a copy of this [KaDefinitelyNotNullType] with modifications applied via the [init] block.
-     *
-     * The builder is pre-populated with the annotations of the original type.
-     * The [init] block can then selectively override these properties.
-     *
-     * @see KaTypeCreator.definitelyNotNullType
-     */
-    @KaExperimentalApi
-    public fun KaDefinitelyNotNullType.copy(init: KaDefinitelyNotNullTypeBuilder.() -> Unit): KaDefinitelyNotNullType
-
-    /**
-     * Creates a copy of this [KaFlexibleType] with modifications applied via the [init] block.
-     * Similarly to [KaTypeCreator.flexibleType], returns `null` if the lower bound is not a subtype of the upper bound.
-     *
-     * In addition, the function returns `null` if the new bounds are equal, as such flexible types are not allowed.
-     * If bounds can become 
-     *
-     * The builder is pre-populated with the bounds and annotations of the original type.
-     * The [init] block can then selectively override these properties.
-     *
-     * #### Example:
-     *
-     * ```kotlin
-     * val withNewUpperBound = flexibleType.copy {
-     *     upperBound = newUpperBound
-     * }
-     * ```
-     *
-     * @see KaTypeCreator.flexibleType
-     */
-    @KaExperimentalApi
-    public fun KaFlexibleType.copy(init: KaFlexibleTypeBuilder.() -> Unit): KaFlexibleType?
 }
 
 /**
