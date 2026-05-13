@@ -730,6 +730,10 @@ tasks.withType<Test>().configureEach {
         "resourcesPath"
     )
 
+    // Redirect K/N toolchain cache to build-local directory to avoid shared mutable ~/.konan.
+    // Picked up by setFunctionalTestMode() which sets it on every ProjectBuilder project.
+    systemProperty("konan.data.dir", layout.buildDirectory.dir("konan-data").get().asFile.absolutePath)
+
     addFileProperty(
         rootProject.layout.projectDirectory.file("kotlin-native/konan/konan.properties"),
         "konanProperties"
@@ -794,17 +798,9 @@ tasks.withType<Test>().configureEach {
             add("""permission java.io.FilePermission "${m2Home.absolutePath}${File.separator}repository", "read";""")
             add("""permission java.io.FilePermission "${m2Home.absolutePath}${File.separator}repository${File.separator}-", "read";""")
 
-            // K/N writes lock files and caches toolchain archives under the konan data directory.
-            // DependencyProcessor.downloadDependency() deletes stale extraction residue before
-            // re-extracting; `delete` is a separate FilePermission action from `write`.
-            addAll(konanDataDir.map {
-                listOf(
-                    // K/N resolves, extracts, updates, and cleans cached toolchain files.
-                    """permission java.io.FilePermission "$it/-", "read,write,delete";""",
-                    // K/N checks the konan data directory root before accessing cached files.
-                    """permission java.io.FilePermission "$it", "read";""",
-                )
-            })
+            // K/N toolchain: konan.data.dir is redirected to build/konan-data via system property.
+            // setFunctionalTestMode() propagates it to every ProjectBuilder project via extra properties.
+            // No ~/.konan permission needed — build directory already has AllPermission.
 
             // K/N dependency resolution executes tar from the environment PATH to extract toolchain archives.
             add("""permission java.io.FilePermission "<<ALL FILES>>", "execute";""")

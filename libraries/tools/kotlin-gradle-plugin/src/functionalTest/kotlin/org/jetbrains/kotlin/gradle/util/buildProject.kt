@@ -186,6 +186,10 @@ fun Project.enableDependencyVerification(enabled: Boolean = true) {
 
 fun Project.setFunctionalTestMode() {
     propertiesExtension.set(PropertiesProvider.PropertyNames.FUNCTIONAL_TEST_MODE_PROPERTY, true)
+    // Redirect K/N toolchain cache to build-local directory to avoid writing to ~/.konan.
+    System.getProperty("konan.data.dir")?.let {
+        propertiesExtension.set("konan.data.dir", it)
+    }
 }
 
 fun Project.mockXcodeVersion(version: XcodeVersion = XcodeVersion.maxTested) {
@@ -221,5 +225,8 @@ fun Project.enableUnresolvedDependenciesDiagnostic(enabled: Boolean = true) {
 }
 
 fun Project.withTemporaryKotlinNativeHome() {
+    // Clear konan.data.dir set by setFunctionalTestMode() — it has higher precedence
+    // than kotlin.native.home in NativeProperties.actualNativeHomeDirectory.
+    propertiesExtension.set("konan.data.dir", null as String?)
     project.extraProperties.set("kotlin.native.home", System.getProperty("kotlin.native.home"))
 }
