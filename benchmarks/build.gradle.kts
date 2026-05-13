@@ -89,7 +89,7 @@ tasks.withType<JavaExec>().matching { it.name == "testBenchmark" }.configureEach
 }
 
 tasks.withType<JavaExec>().matching { it.name == "testReflectionBenchmark" }.configureEach {
-    systemProperty("kotlin.reflect.jvm.useK1Implementation", "true")
+    systemProperty("kotlin.reflect.jvm.useK1Implementation", "false")
     systemProperty("kotlin.reflect.jvm.newFakeOverridesImplementation", "true")
 
 }
