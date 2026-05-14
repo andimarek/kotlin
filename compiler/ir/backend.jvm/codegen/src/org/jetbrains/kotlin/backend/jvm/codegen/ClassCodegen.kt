@@ -40,6 +40,7 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.isArray
 import org.jetbrains.kotlin.ir.util.*
+import org.jetbrains.kotlin.load.java.JavaDescriptorVisibilities
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames.METADATA_JVM_IR_FLAG
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames.METADATA_JVM_IR_STABLE_ABI_FLAG
@@ -279,7 +280,13 @@ class ClassCodegen private constructor(
 
     private fun generateKotlinMetadataAnnotation() {
         fun addSyntheticClassVisibilityFlags(extraFlags: Int): Int {
-            val visibilityFlagsValue = ProtoEnumFlags.descriptorVisibility(irClass.visibility.normalize()).number
+            val normalizedVisibilityForSyntheticClass: DescriptorVisibility =
+                if (irClass.isOriginallyLocal && irClass.visibility == JavaDescriptorVisibilities.PACKAGE_VISIBILITY) {
+                    // `package-private` is used for lambdas for historical reasons, but we want them to be
+                    // normalized to `local` instead of `protected`
+                    DescriptorVisibilities.LOCAL
+                } else irClass.visibility.normalize()
+            val visibilityFlagsValue = ProtoEnumFlags.descriptorVisibility(normalizedVisibilityForSyntheticClass).number
             val maxVisibilityBits =
                 1 + JvmAnnotationNames.METADATA_SYNTHETIC_CLASS_VISIBILITY_BIT_LAST - JvmAnnotationNames.METADATA_SYNTHETIC_CLASS_VISIBILITY_BIT_FIRST
             assert(visibilityFlagsValue in 0 until (1 shl maxVisibilityBits)) { "Visibility flag value is out of range: $visibilityFlagsValue" }
