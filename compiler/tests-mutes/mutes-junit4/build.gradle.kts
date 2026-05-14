@@ -18,8 +18,8 @@ dependencies {
 configurations.all {
     resolutionStrategy.eachDependency {
         if (requested.group == "ch.qos.logback" && requested.name == "logback-core") {
-            useVersion("1.5.19")
-            because("CVE-2025-11226")
+            useVersion("1.5.25")
+            because("CVE-2026-1225, CVE-2025-11226")
         }
     }
 }
