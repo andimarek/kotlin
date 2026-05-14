@@ -119,7 +119,7 @@ abstract class KotlinAsJavaSupportBase<TModule : Any>(protected val project: Pro
         file.takeIf { it.facadeIsPossible() }?.findModule()?.let { file to it }
     }.groupBy { [file, module] ->
         FacadeKey(file.javaFileFacadeFqName, file.isJvmMultifileClassFile, module)
-    }.mapNotNull { (_, pairs) ->
+    }.mapNotNull { [_, pairs] ->
         pairs.firstNotNullOfOrNull { [file, module] ->
             file.takeIf { facadeIsApplicable(module, file) }
         }?.let(::getLightFacade)

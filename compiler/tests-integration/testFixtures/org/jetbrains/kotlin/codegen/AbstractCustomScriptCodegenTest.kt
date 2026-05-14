@@ -115,7 +115,7 @@ abstract class AbstractCustomScriptCodegenTest : CodegenTestCase() {
     private fun checkExpectedFields(expectedFields: Map<String, Any?>, scriptClass: Class<*>, scriptInstance: Any?) {
         Assert.assertFalse("expecting at least one expectation", expectedFields.isEmpty())
 
-        for ((fieldName, expectedValue) in expectedFields) {
+        for ([fieldName, expectedValue] in expectedFields) {
 
             if (expectedValue == "<nofield>") {
                 try {

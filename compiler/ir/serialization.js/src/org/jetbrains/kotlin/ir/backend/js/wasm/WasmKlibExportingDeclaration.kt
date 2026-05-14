@@ -41,17 +41,17 @@ class WasmKlibExportingDeclaration(
         ) = buildList {
             for (serializedFile in cleanFiles) {
                 val fileMetadata = WasmIrFileMetadata.fromByteArray(serializedFile.fileMetadata)
-                for ((exportKind, exportedNames) in fileMetadata.exportNames) {
+                for ([exportKind, exportedNames] in fileMetadata.exportNames) {
                     for (exportedName in exportedNames) {
                         add(WasmKlibExportingDeclaration(exportedName, serializedFile, exportKind))
                     }
                 }
             }
 
-            for ((exportKind, exportNamesFileMap) in exportedNames) {
+            for ([exportKind, exportNamesFileMap] in exportedNames) {
                 for (dirtyFile in dirtyFiles) {
                     val exportedDeclarations = exportNamesFileMap[dirtyFile] ?: continue
-                    for ((declaration, exportedName) in exportedDeclarations) {
+                    for ([declaration, exportedName] in exportedDeclarations) {
                         add(WasmKlibExportingDeclaration(exportedName, dirtyFile, declaration, exportKind))
                     }
                 }

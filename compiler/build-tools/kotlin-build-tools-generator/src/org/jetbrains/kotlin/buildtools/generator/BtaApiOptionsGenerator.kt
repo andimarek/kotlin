@@ -162,7 +162,7 @@ internal class BtaApiOptionsGenerator(
             }
         }
 
-        enumsToGenerate.forEach { (type, typeSpecBuilder) ->
+        enumsToGenerate.forEach { [type, typeSpecBuilder] ->
             if (enumsExperimental.getOrDefault(type, false)) {
                 typeSpecBuilder.addAnnotation(ANNOTATION_EXPERIMENTAL)
             }

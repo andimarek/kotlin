@@ -362,7 +362,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
             .filter { (it.classifierOrFail.owner as? IrDeclaration)?.isExportedImplicitlyOrExplicitly(context) ?: false }
             .map { exportType(it, typeParameterScope) }
             .memoryOptimizedFilter { it !is ExportedType.ErrorType }
-        val (members, nestedClasses) = exportClassDeclarations(klass, superTypes, typeParameterScope)
+        val [members, nestedClasses] = exportClassDeclarations(klass, superTypes, typeParameterScope)
         return ExportedRegularClass(
             name = name,
             isInterface = true,
@@ -392,7 +392,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
         }
 
         val typeParameterScope = newTypeParameterScope(klass, outerClassTypeParameterScope, renameOuterTypeParameters = true)
-        val (members, nestedClasses) = exportClassDeclarations(klass, superTypes, typeParameterScope)
+        val [members, nestedClasses] = exportClassDeclarations(klass, superTypes, typeParameterScope)
         return exportClass(
             klass,
             superTypes,
@@ -421,7 +421,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
             enumEntries
                 .keysToMap(enumEntries::indexOf)
 
-        val (members, nestedClasses) = exportClassDeclarations(klass, superTypes, emptyMap()) { candidate ->
+        val [members, nestedClasses] = exportClassDeclarations(klass, superTypes, emptyMap()) { candidate ->
             val enumExportedMember = exportAsEnumMember(candidate, enumEntriesToOrdinal)
             enumExportedMember
         }
@@ -795,7 +795,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
                             .reduceOrNull { acc: ExportedType, s: ExportedType -> ExportedType.UnionType(acc, s) }
                             ?: ExportedType.Primitive.Nothing
                         "ordinal" -> enumEntriesToOrdinal
-                            .map { (_, ordinal) -> ExportedType.LiteralType.NumberLiteralType(ordinal) }
+                            .map { [_, ordinal] -> ExportedType.LiteralType.NumberLiteralType(ordinal) }
                             .reduceOrNull { acc: ExportedType, s: ExportedType -> ExportedType.UnionType(acc, s) }
                             ?: ExportedType.Primitive.Nothing
                         else -> return emptyList()
@@ -877,7 +877,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
 
         val nameTable = NameTable<IrTypeParameterSymbol>()
         if (shouldIncludeOuterScope && !renameOuterTypeParameters) {
-            for ((irTypeParameter, exported) in outerScope) {
+            for ([irTypeParameter, exported] in outerScope) {
                 nameTable.declareStableName(irTypeParameter, exported.name)
             }
         }
@@ -891,7 +891,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
         var shouldRecomputeOuterConstraints = false
         if (shouldIncludeOuterScope) {
             if (renameOuterTypeParameters) {
-                for ((irTypeParameter, exported) in outerScope) {
+                for ([irTypeParameter, exported] in outerScope) {
                     shouldRecomputeOuterConstraints = true
                     val disambiguatedName = irTypeParameter.owner.parentDeclarationsWithSelf.joinToString(separator = "\$") {
                         (it as IrDeclarationWithName).getExportedIdentifier()
@@ -905,7 +905,7 @@ class ExportModelGenerator(val context: JsIrBackendContext, val isEsModules: Boo
 
         // Then compute the constraints
         var i = 0
-        for ((tp, exported) in this) {
+        for ([tp, exported] in this) {
             if (!shouldRecomputeOuterConstraints && i == newTypeParameters.size) {
                 // Don't compute constraints for type parameters from the `outerScope` map, they should already be computed at this point.
                 // Unless we've renamed those type parameters, in which case we have to compute the constraints for them again.
