@@ -243,6 +243,7 @@ class JvmCachedDeclarations(
                 endOffset = interfaceClass.endOffset
                 origin = JvmLoweredDeclarationOrigin.DEFAULT_IMPLS
                 name = Name.identifier(JvmAbi.DEFAULT_IMPLS_CLASS_NAME)
+                visibility = interfaceClass.visibility
             }.apply {
                 parent = interfaceClass
                 createThisReceiverParameter()
