@@ -60,7 +60,7 @@ class JsIrLoweringFacade(
 
         if (skipRegularMode) return null
 
-        val (compilerResult, icCache) = if (JsEnvironmentConfigurator.incrementalEnabled(testServices)) {
+        val [compilerResult, icCache] = if (JsEnvironmentConfigurator.incrementalEnabled(testServices)) {
             compileIncrementally(inputArtifact, module)
         } else {
             compileNonIncrementally(inputArtifact)
@@ -182,7 +182,7 @@ class JsIrLoweringFacade(
         val mainModuleFile = allJsFiles.last()
         mainModuleFile.fixJsFile(rootDir, outputFile, artifactConfiguration.moduleName, artifactConfiguration.moduleKind)
 
-        dependencies.map { it.artifactConfiguration.moduleName }.zip(allJsFiles.dropLast(1)).forEach { (depModuleId, builtJsFilePath) ->
+        dependencies.map { it.artifactConfiguration.moduleName }.zip(allJsFiles.dropLast(1)).forEach { [depModuleId, builtJsFilePath] ->
             val newFile = outputFile.augmentWithModuleName(depModuleId)
             builtJsFilePath.fixJsFile(rootDir, newFile, "./$depModuleId.js", artifactConfiguration.moduleKind)
         }

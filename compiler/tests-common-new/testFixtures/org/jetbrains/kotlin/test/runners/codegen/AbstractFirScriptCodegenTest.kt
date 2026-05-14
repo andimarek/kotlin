@@ -161,7 +161,7 @@ class FirJvmScriptRunChecker(testServices: TestServices) : JvmBinaryArtifactHand
             Regex("param: (\\S.*)").find(scriptText)?.let { it.groups[1]?.value?.split(" ") }
                 .orEmpty().toTypedArray()
         val scriptInstance = ctor.newInstance(args)
-        for ((fieldName, expectedValue) in expected) {
+        for ([fieldName, expectedValue] in expected) {
             if (expectedValue == "<nofield>") {
                 try {
                     scriptClass.getDeclaredField(fieldName)

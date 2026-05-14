@@ -44,7 +44,7 @@ class InlineCallCycleCheckerLowering<Context : LoweringContext>(val context: Con
 
         fun reportInlineCallCycle(edgesInCycle: List<CallEdge>) {
             if (diagnosticReporter != null) {
-                (edgesInCycle + edgesInCycle.first()).zipWithNext().forEach { (callerEdge, calleeEdge) ->
+                (edgesInCycle + edgesInCycle.first()).zipWithNext().forEach { [callerEdge, calleeEdge] ->
                     calleeEdge.call?.let { call ->
                         diagnosticReporter
                             .at(call, callerEdge.callNode.function.file)

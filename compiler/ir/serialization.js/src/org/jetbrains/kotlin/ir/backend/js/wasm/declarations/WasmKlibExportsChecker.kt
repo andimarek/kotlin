@@ -17,7 +17,7 @@ object WasmKlibExportsChecker {
         val allExportedNameClashes = declarations.groupBy { it.exportingName }.filterValues { it.size > 1 }
 
         for (exportedDeclarationClashes in allExportedNameClashes.values) {
-            for ((index, exportedDeclaration) in exportedDeclarationClashes.withIndex()) {
+            for ([index, exportedDeclaration] in exportedDeclarationClashes.withIndex()) {
                 val declaration = exportedDeclaration.declaration ?: continue
                 val clashedWith = exportedDeclarationClashes.filterIndexed { i, _ -> i != index }
 

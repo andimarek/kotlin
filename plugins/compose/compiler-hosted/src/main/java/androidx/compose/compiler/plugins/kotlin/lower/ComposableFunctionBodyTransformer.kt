@@ -784,7 +784,7 @@ class ComposableFunctionBodyTransformer(
 
         val defaultScope = transformDefaults(scope)
 
-        var (transformed, returnVar) = body.asBodyAndResultVar()
+        var [transformed, returnVar] = body.asBodyAndResultVar()
 
         val emitTraceMarkers = traceEventMarkersEnabled &&
                 !scope.function.isInline &&
@@ -955,7 +955,7 @@ class ComposableFunctionBodyTransformer(
 
         scope.dirty = dirty
 
-        val (nonReturningBody, returnVar) = body.asBodyAndResultVar(declaration)
+        val [nonReturningBody, returnVar] = body.asBodyAndResultVar(declaration)
 
         val emitTraceMarkers = traceEventMarkersEnabled && !scope.isInlinedLambda
 
@@ -1115,7 +1115,7 @@ class ComposableFunctionBodyTransformer(
 
         scope.dirty = dirty
 
-        val (nonReturningBody, returnVar) = body.asBodyAndResultVar()
+        val [nonReturningBody, returnVar] = body.asBodyAndResultVar()
 
         val end = {
             irEndRestartGroupAndUpdateScope(
@@ -1308,7 +1308,7 @@ class ComposableFunctionBodyTransformer(
         }
 
         val originalBody = declaration.body ?: return super.visitFunction(declaration)
-        val (body, returnVar) = originalBody.asBodyAndResultVar()
+        val [body, returnVar] = originalBody.asBodyAndResultVar()
         body.transformChildrenVoid()
 
         // Avoid transforming functions that are not referencing anything composable, as they cannot use slots.
@@ -3587,7 +3587,7 @@ class ComposableFunctionBodyTransformer(
         if (blockArg !is IrFunctionExpression)
             error("Expected function expression but was ${blockArg?.let { it::class }}")
 
-        val (block, resultVar) = blockArg.function.body!!.asBodyAndResultVar(expectedTarget = blockArg.function)
+        val [block, resultVar] = blockArg.function.body!!.asBodyAndResultVar(expectedTarget = blockArg.function)
 
         var transformed: IrExpression = block
 
@@ -3949,7 +3949,7 @@ class ComposableFunctionBodyTransformer(
             expression.branches.fastForEachIndexed { index, it ->
                 if (it is IrElseBranch) {
                     hasElseBranch = true
-                    val (resultScope, result) = it.result.transformWithScope(Scope.BranchScope())
+                    val [resultScope, result] = it.result.transformWithScope(Scope.BranchScope())
 
                     condScopes.add(Scope.BranchScope())
                     resultScopes.add(resultScope)
@@ -3966,10 +3966,10 @@ class ComposableFunctionBodyTransformer(
                         )
                     )
                 } else {
-                    val (condScope, condition) = it
+                    val [condScope, condition] = it
                         .condition
                         .transformWithScope(Scope.BranchScope())
-                    val (resultScope, result) = it
+                    val [resultScope, result] = it
                         .result
                         .transformWithScope(Scope.BranchScope())
 
@@ -5047,7 +5047,7 @@ private fun IrFunction.parameterInformation(): String {
     parameters
         .mapIndexed { index, parameter -> Pair(index, parameter) }
         .sortedBy { it.second.name }
-        .forEachIndexed { sortedIndex, (originalIndex, _) ->
+        .forEachIndexed { sortedIndex, [originalIndex, _] ->
             sortIndex[originalIndex] = sortedIndex
         }
 

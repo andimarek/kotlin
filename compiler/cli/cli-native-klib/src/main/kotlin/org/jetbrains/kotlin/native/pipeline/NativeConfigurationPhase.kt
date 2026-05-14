@@ -138,7 +138,7 @@ object NativeKlibConfigurationUpdater : ConfigurationUpdater<K2NativeCompilerArg
         configuration: CompilerConfiguration,
     ): List<KonanTarget> {
         val trimmedTargetStrings = targetStrings.map { it.trim() }
-        val (recognizedTargetNames, unrecognizedTargetNames) = trimmedTargetStrings.partition {
+        val [recognizedTargetNames, unrecognizedTargetNames] = trimmedTargetStrings.partition {
             it in KonanTarget.predefinedTargets.keys
         }
 

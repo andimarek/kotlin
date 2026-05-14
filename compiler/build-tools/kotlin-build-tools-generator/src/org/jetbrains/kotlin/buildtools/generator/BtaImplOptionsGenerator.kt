@@ -772,7 +772,7 @@ internal class BtaImplOptionsGenerator(
                 append(" This warning will become an error starting from Kotlin ${info.errorSince.releaseName}.")
             }
         }
-        val (violationType, message) = when {
+        val [violationType, message] = when {
             info.errorSince != null && kotlinVersion >= info.errorSince -> "Error" to baseMessage
             kotlinVersion >= info.warningSince -> "Warning" to warningMessage
             else -> return

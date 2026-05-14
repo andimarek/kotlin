@@ -53,7 +53,7 @@ class Fir2IrLazySimpleFunction(
 
         val baseFunctionWithDispatchReceiverTag =
             lazyFakeOverrideGenerator.computeFakeOverrideKeys(firParent, fir.symbol)
-        baseFunctionWithDispatchReceiverTag.map { (symbol, dispatchReceiverLookupTag) ->
+        baseFunctionWithDispatchReceiverTag.map { [symbol, dispatchReceiverLookupTag] ->
             declarationStorage.getIrFunctionSymbol(symbol, dispatchReceiverLookupTag) as IrSimpleFunctionSymbol
         }
     }

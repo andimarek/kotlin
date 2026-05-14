@@ -175,7 +175,7 @@ abstract class AbstractResolveReferenceTest : AbstractResolveTest<KtReference?>(
                     }
 
                     is KaCompoundSymbolResolutionError -> withIndent {
-                        for ((index, subAttempt) in attempt.attempts.withIndex()) {
+                        for ([index, subAttempt] in attempt.attempts.withIndex()) {
                             append("attempts[$index]: ")
                             appendLine(renderFrontendIndependentKClassNameOf(subAttempt))
                             withIndent {

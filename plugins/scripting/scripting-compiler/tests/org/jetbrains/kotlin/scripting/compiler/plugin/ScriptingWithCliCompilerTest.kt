@@ -187,7 +187,7 @@ class ScriptingWithCliCompilerTest {
 
     @Test
     fun testExceptionWithCause() {
-        val (_, err, _) = captureOutErrRet {
+        val [_, err, _] = captureOutErrRet {
             CLICompiler.doMainNoExit(
                 K2JVMCompiler(),
                 arrayOf(
@@ -228,7 +228,7 @@ class ScriptingWithCliCompilerTest {
                     )
                 )
             assertEquals(ExitCode.OK.code, ret.code)
-            val (out, _, _) = captureOutErrRet {
+            val [out, _, _] = captureOutErrRet {
                 val cl = URLClassLoader((getMainKtsClassPath() + tmpdir).map { it.toURI().toURL() }.toTypedArray())
                 val klass = cl.loadClass("ScriptAccessingNonScript_main")
                 val ctor = klass.constructors.single()
@@ -241,7 +241,7 @@ class ScriptingWithCliCompilerTest {
     @Test
     fun testAccessScriptFromRegularSource() {
         withTempDir { tmpdir ->
-            val (_, err, ret) = captureOutErrRet {
+            val [_, err, ret] = captureOutErrRet {
                 CLICompiler.doMainNoExit(
                     K2JVMCompiler(),
                     arrayOf(
@@ -266,7 +266,7 @@ class ScriptingWithCliCompilerTest {
         withTempDir { tmpdir ->
 
             fun compileSuccessfullyGetStdErr(fileArg: String): List<String> {
-                val (_, err, ret) = captureOutErrRet {
+                val [_, err, ret] = captureOutErrRet {
                     CLICompiler.doMainNoExit(
                         K2JVMCompiler(),
                         arrayOf(

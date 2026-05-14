@@ -106,7 +106,7 @@ class NativeCompilerSecondStageFacade private constructor(
             val mainLibraries = mutableListOf<String>()
             for ((services, _) in inputArtifact.nonGroupingPhaseOutputs) {
                 val mainModule = services.moduleStructure.modules.last()
-                mainModule.collectDependencies(services).let { (regular, friend) ->
+                mainModule.collectDependencies(services).let { [regular, friend] ->
                     regularDependencies += regular
                     friendDependencies += friend
                 }
