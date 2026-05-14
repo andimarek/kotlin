@@ -1,3 +1,4 @@
+IGNORE_PER_FILE: true
 MODULES: second, main
 CALL_MAIN: true
 
