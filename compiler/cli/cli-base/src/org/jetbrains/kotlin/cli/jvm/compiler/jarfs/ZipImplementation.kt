@@ -78,17 +78,19 @@ internal fun LargeDynamicMappedBuffer.parseCentralDirectory(): List<ZipEntryDesc
 //            val versionNeededToExtract =
 //                getShort(6).toInt()
 
-            val compressionMethod = getShort(10).toInt()
+            val headerBytes = getBytes(0, length = 46)
 
-            val fileNameLength = getUnsignedShort(28)
-            val extraLength = getUnsignedShort(30)
+            val compressionMethod = headerBytes.getShort(10).toInt()
+
+            val fileNameLength = headerBytes.getUnsignedShort(28)
+            val extraLength = headerBytes.getUnsignedShort(30)
             val extraFieldOffset = 46 + fileNameLength
 
-            val compressedSize32 = getInt(20)
-            val uncompressedSize32 = getInt(24)
-            val fileCommentLength = getUnsignedShort(32)
+            val compressedSize32 = headerBytes.getInt(20)
+            val uncompressedSize32 = headerBytes.getInt(24)
+            val fileCommentLength = headerBytes.getUnsignedShort(32)
 
-            val offsetOfFileData32 = getInt(42)
+            val offsetOfFileData32 = headerBytes.getInt(42)
 
             // NOTE: order of Zip64 fields is fixed, see "4.5.3 -Zip64 Extended Information Extra Field" in zip file format specs
             var extraFieldNo = 0
@@ -171,3 +173,15 @@ private fun LargeDynamicMappedBuffer.Mapping.parseZip64CentralDirectoryRecordsNu
 
 private fun LargeDynamicMappedBuffer.Mapping.getUnsignedShort(offset: Int): Int = java.lang.Short.toUnsignedInt(getShort(offset))
 
+private fun ByteArray.getInt(offset: Int): Int =
+    (this[offset + 3].toInt() and 0xFF shl 24) or
+            (this[offset + 2].toInt() and 0xFF shl 16) or
+            (this[offset + 1].toInt() and 0xFF shl 8) or
+            (this[offset].toInt() and 0xFF)
+
+private fun ByteArray.getShort(offset: Int): Short =
+    ((this[offset + 1].toInt() and 0xFF shl 8) or
+            (this[offset].toInt() and 0xFF)).toShort()
+
+private fun ByteArray.getUnsignedShort(offset: Int): Int =
+    java.lang.Short.toUnsignedInt(getShort(offset))
