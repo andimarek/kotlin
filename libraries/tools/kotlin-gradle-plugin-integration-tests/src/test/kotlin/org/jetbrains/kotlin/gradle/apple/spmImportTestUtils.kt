@@ -442,11 +442,9 @@ internal fun TestProject.selectedPersistedPackageResolvedPath(
     }
 
 internal fun TestProject.initJvmSwiftPmProject(
-    cacheDirFile: File,
     extra: KotlinMultiplatformExtension.() -> Unit,
 ) {
     initJvmKmp {
-        configureSwiftPmTestArgs(cacheDirFile)
         extra()
     }
 }
@@ -485,6 +483,72 @@ private fun KotlinMultiplatformExtension.configureSwiftPmTestArgs(
                 )
             )
         }
+}
+//This approach causes configuration cache issues.
+//internal fun TestProject.dumpTaskGraph(taskName: String, assertions : Set<String>.() -> Unit): Set<String> {
+//    val dumpName = "taskgraph_dump${UUID.randomUUID().toString().replace("-", "_")}"
+//    val outputFile = projectPath.resolve(dumpName).toFile()
+//    outputFile.createNewFile()
+//
+//    buildScriptInjection {
+//        project.gradle.taskGraph.whenReady {
+//            outputFile.writeText(
+//                it.allTasks.joinToString(separator = "\n") { it.path }
+//            )
+//        }
+//    }
+//
+//    build(taskName, "--dry-run")
+//    val taskGraph = outputFile.readText().split("\n").toSet()
+//     assertions(taskGraph)
+//    return taskGraph
+//}
+
+internal fun TestProject.dumpTaskGraph(
+    taskName: String,
+    assertions: Set<String>.() -> Unit,
+): Set<String> {
+    lateinit var taskGraph: Set<String>
+
+    build(taskName, "--dry-run") {
+        taskGraph = output
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.endsWith(" SKIPPED") }
+            .map { it.removeSuffix(" SKIPPED") }
+            .filter { it.startsWith(":") }
+            .toSet()
+    }
+
+    assertions(taskGraph)
+    return taskGraph
+}
+
+internal fun Set<String>.assertExactSwiftImportTasksInGraph(vararg tasks : String) {
+    val taskToExclude = setOf(
+        ":kmpPartiallyResolvedDependenciesChecker",
+        ":downloadKotlinNativeDistribution",
+        ":checkKotlinGradlePluginConfigurationErrors",
+    )
+    // we also need to exlcude "right:checkKotlinGradlePluginConfigurationErrors"
+    val filteredGraph = filterNot { taskPath ->
+        taskToExclude.any { suffix ->
+            taskPath.endsWith(suffix)
+        }
+    }.toSet()
+    filteredGraph.assertExactTaskGraph(*tasks)
+}
+
+internal fun Set<String>.assertExactTaskGraph(vararg tasks : String) {
+    val expected = tasks.toSet()
+
+    val difference = (this - expected + (expected - this)).toSet()
+    assertEquals(
+        expected, this, "Executed tasks should be exactly the expected ones \n" +
+                "Expected: ${expected}\n" +
+                "Actual: ${this} \n" +
+                "Difference: ${difference}\n"
+    )
 }
 
 internal fun LockFileTestFixture.createRepo(

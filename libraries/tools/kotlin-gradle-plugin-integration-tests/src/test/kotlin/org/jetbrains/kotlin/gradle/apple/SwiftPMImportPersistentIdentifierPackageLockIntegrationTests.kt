@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.gradle.apple.initSwiftPmProject
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.FetchSyntheticImportProjectPackages
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.GenerateSyntheticLinkageImportProject
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.PackageResolvedSynchronization
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.SerializeSwiftPMDependenciesMetadataForLockFiles
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.SyncPackageResolvedTask
 import org.jetbrains.kotlin.gradle.testbase.*
 import org.jetbrains.kotlin.gradle.uklibs.include
 import org.junit.jupiter.api.DisplayName
@@ -781,7 +783,7 @@ class SwiftPMImportPersistentIdentifierPackageLockIntegrationTests : KGPBaseTest
                     createRepo(it.name, listOf("1.0.0"))
                 }
 
-                initJvmSwiftPmProject(cacheDirFile){
+                initJvmSwiftPmProject{
                     sourceSets.getByName("commonMain").dependencies {
                         implementation(project(":$sharedProjectName"))
                     }
@@ -821,37 +823,19 @@ class SwiftPMImportPersistentIdentifierPackageLockIntegrationTests : KGPBaseTest
                 val sharedPersistedPackageResolved = projectPath.resolve(".swiftpm-locks/$sharedIdentifier/swiftImport/Package.resolved")
                 val rootPersistedPackageResolved = persistedPackageResolvedSyncPath
 
-                val expectedSharedGenerateUmbrellaPackageTaskName =
-                    GenerateSyntheticLinkageImportProject.syntheticUmbrellaPackageGenerationTaskName(sharedIdentifier)
-
-                val expectedSharedFetchUmbrellaPackageTaskName =
-                    FetchSyntheticImportProjectPackages.fetchUmbrellaPackageTaskName(sharedIdentifier)
-
-                val expectedRootGenerateUmbrellaPackageTaskName =
-                    GenerateSyntheticLinkageImportProject.syntheticUmbrellaPackageGenerationTaskName(rootIdentifier)
-
-                val expectedRootFetchUmbrellaPackageTaskName =
-                    FetchSyntheticImportProjectPackages.fetchUmbrellaPackageTaskName(rootIdentifier)
-
-
                 build(":$sharedProjectName:${FetchSyntheticImportProjectPackages.TASK_NAME}") {
 
-
-                    // umbrella generate should be picked by shared
-                    assertTasksExecuted(
-                        ":$sharedProjectName:$expectedSharedGenerateUmbrellaPackageTaskName"
-                    )
-
-
-                    // umbrella fetch should be picked by shared
-                    assertTasksExecuted(
-                        ":$sharedProjectName:$expectedSharedFetchUmbrellaPackageTaskName"
-                    )
-
-                    // root should not be part of umbrella generate neither fetch.
-                    assertTasksAreNotInTaskGraph(
-                        ":$expectedRootGenerateUmbrellaPackageTaskName",
-                        ":$expectedRootFetchUmbrellaPackageTaskName",
+                    assertExactTasksInGraph(
+                        ":$sharedProjectName:${SerializeSwiftPMDependenciesMetadataForLockFiles.TASK_NAME}",
+                        ":$sharedProjectName:${GenerateSyntheticLinkageImportProject.syntheticImportProjectGenerationTaskName}",
+                        ":$sharedProjectName:${
+                            GenerateSyntheticLinkageImportProject.syntheticUmbrellaPackageGenerationTaskName(
+                                sharedIdentifier
+                            )
+                        }",
+                        ":$sharedProjectName:${FetchSyntheticImportProjectPackages.fetchUmbrellaPackageTaskName(sharedIdentifier)}",
+                        ":$sharedProjectName:${FetchSyntheticImportProjectPackages.TASK_NAME}",
+                        ":$sharedProjectName:${SyncPackageResolvedTask.SYNC_PERSISTED_PACKAGE_RESOLVED_TO_SYNTHETIC_TASK_NAME}"
                     )
 
                     assertFileExists(
@@ -886,14 +870,12 @@ class SwiftPMImportPersistentIdentifierPackageLockIntegrationTests : KGPBaseTest
 
                 build(":${FetchSyntheticImportProjectPackages.TASK_NAME}") {
 
-
-                    // no generate nor fetch tasks should be registered
-                    assertTasksAreNotInTaskGraph(
-                        ":$sharedProjectName:$expectedSharedGenerateUmbrellaPackageTaskName",
-                        ":$sharedProjectName:$expectedSharedFetchUmbrellaPackageTaskName",
-                        ":$expectedRootGenerateUmbrellaPackageTaskName",
-                        ":$expectedRootFetchUmbrellaPackageTaskName",
+                    assertExactTasksInGraph(
+                        ":${GenerateSyntheticLinkageImportProject.syntheticImportProjectGenerationTaskName}",
+                        ":${FetchSyntheticImportProjectPackages.TASK_NAME}",
+                        ":${SyncPackageResolvedTask.SYNC_PERSISTED_PACKAGE_RESOLVED_TO_SYNTHETIC_TASK_NAME}"
                     )
+
 
                     assertFileNotExists(
                         umbrellaRootPackageManifest,
@@ -956,45 +938,51 @@ class SwiftPMImportPersistentIdentifierPackageLockIntegrationTests : KGPBaseTest
                 include(projectWithDeps, projectWithDepsName)
                 include(projectWithoutDeps, projectWithoutDepsName)
 
-                val emptyGenerateUmbrellaTask =
-                    ":$projectWithoutDepsName:${GenerateSyntheticLinkageImportProject.syntheticUmbrellaPackageGenerationTaskName(emptyIdentifier)}"
-                val emptyFetchUmbrellaTask =
-                    ":$projectWithoutDepsName:${FetchSyntheticImportProjectPackages.fetchUmbrellaPackageTaskName(emptyIdentifier)}"
-                val emptyGenerateSyntheticTask =
-                    ":$projectWithoutDepsName:${GenerateSyntheticLinkageImportProject.syntheticImportProjectGenerationTaskName}"
-                val emptyFetchSyntheticTask =
-                    ":$projectWithoutDepsName:${FetchSyntheticImportProjectPackages.TASK_NAME}"
-
                 val depsGenerateUmbrellaTask =
                     ":$projectWithDepsName:${GenerateSyntheticLinkageImportProject.syntheticUmbrellaPackageGenerationTaskName(alignedIdentifier)}"
                 val depsFetchUmbrellaTask =
                     ":$projectWithDepsName:${FetchSyntheticImportProjectPackages.fetchUmbrellaPackageTaskName(alignedIdentifier)}"
 
-                build(":$projectWithoutDepsName:linkDebugTestIosSimulatorArm64") {
-                    assertTasksSkipped(
-                        emptyGenerateUmbrellaTask,
-                        emptyFetchUmbrellaTask,
-                        emptyGenerateSyntheticTask,
-                        emptyFetchSyntheticTask,
-                    )
+                dumpTaskGraph(":$projectWithoutDepsName:linkDebugTestIosSimulatorArm64") {
 
-                    assertTasksAreNotInTaskGraph(
-                        depsGenerateUmbrellaTask,
-                        depsFetchUmbrellaTask,
+                    assertExactSwiftImportTasksInGraph(
+                        ":$projectWithoutDepsName:${SerializeSwiftPMDependenciesMetadataForLockFiles.TASK_NAME}",
+                        ":$projectWithoutDepsName:${GenerateSyntheticLinkageImportProject.syntheticImportProjectGenerationTaskName}",
+                        ":$projectWithoutDepsName:${SyncPackageResolvedTask.SYNC_PERSISTED_PACKAGE_RESOLVED_TO_SYNTHETIC_TASK_NAME}",
+                        ":$projectWithoutDepsName:${
+                            GenerateSyntheticLinkageImportProject.syntheticUmbrellaPackageGenerationTaskName(
+                                emptyIdentifier
+                            )
+                        }",
+                        ":$projectWithoutDepsName:${FetchSyntheticImportProjectPackages.fetchUmbrellaPackageTaskName(emptyIdentifier)}",
+                        ":$projectWithoutDepsName:${FetchSyntheticImportProjectPackages.TASK_NAME}",
+                        ":$projectWithoutDepsName:iosSimulatorArm64ProcessResources",
+                        ":$projectWithoutDepsName:computeLocalPackageDependencyInputFiles",
+                        ":$projectWithoutDepsName:compileKotlinIosSimulatorArm64",
+                        ":$projectWithoutDepsName:convertSyntheticImportProjectIntoDefFileIphonesimulator",
+                        ":$projectWithoutDepsName:iosSimulatorArm64MainKlibrary",
+                        ":$projectWithoutDepsName:compileTestKotlinIosSimulatorArm64",
+                        ":$projectWithoutDepsName:linkDebugTestIosSimulatorArm64",
                     )
                 }
 
-                build(":$projectWithDepsName:linkDebugTestIosSimulatorArm64") {
-                    assertTasksExecuted(
+                dumpTaskGraph(":$projectWithDepsName:linkDebugTestIosSimulatorArm64") {
+
+                    assertExactSwiftImportTasksInGraph(
+                        ":$projectWithDepsName:${SerializeSwiftPMDependenciesMetadataForLockFiles.TASK_NAME}",
+                        ":$projectWithDepsName:${GenerateSyntheticLinkageImportProject.syntheticImportProjectGenerationTaskName}",
+                        ":$projectWithDepsName:${SyncPackageResolvedTask.SYNC_PERSISTED_PACKAGE_RESOLVED_TO_SYNTHETIC_TASK_NAME}",
                         depsGenerateUmbrellaTask,
                         depsFetchUmbrellaTask,
-                    )
-
-                    assertTasksAreNotInTaskGraph(
-                        emptyGenerateUmbrellaTask,
-                        emptyFetchUmbrellaTask,
-                        emptyGenerateSyntheticTask,
-                        emptyFetchSyntheticTask,
+                        ":$projectWithDepsName:${FetchSyntheticImportProjectPackages.TASK_NAME}",
+                        ":$projectWithDepsName:iosSimulatorArm64ProcessResources",
+                        ":$projectWithDepsName:computeLocalPackageDependencyInputFiles",
+                        ":$projectWithDepsName:compileKotlinIosSimulatorArm64",
+                        ":$projectWithDepsName:convertSyntheticImportProjectIntoDefFileIphonesimulator",
+                        ":$projectWithDepsName:cinteropSwiftPMImportIosSimulatorArm64",
+                        ":$projectWithDepsName:iosSimulatorArm64MainKlibrary",
+                        ":$projectWithDepsName:compileTestKotlinIosSimulatorArm64",
+                        ":$projectWithDepsName:linkDebugTestIosSimulatorArm64",
                     )
                 }
             }
