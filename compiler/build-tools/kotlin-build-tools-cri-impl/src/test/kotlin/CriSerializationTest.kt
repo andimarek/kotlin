@@ -32,7 +32,10 @@ class CriSerializationTest {
                     to listOf(file2, file3),
         )
 
-        val (serializedLookups, serializedFileIdsToPaths) = CriDataSerializerImpl().serializeLookups(lookups, BasicFileToPathConverter)
+        (val serializedLookups = lookups, val serializedFileIdsToPaths = fileIdsToPaths) = CriDataSerializerImpl().serializeLookups(
+            lookups,
+            BasicFileToPathConverter
+        )
 
         val deserializer = CriDataDeserializerImpl()
         val decodedLookups = deserializer.deserializeLookupData(serializedLookups)
@@ -73,8 +76,14 @@ class CriSerializationTest {
                     to listOf(file1, file2),
         )
 
-        val (serializedLookups1, _) = CriDataSerializerImpl().serializeLookups(lookups1, BasicFileToPathConverter)
-        val (serializedLookups2, _) = CriDataSerializerImpl().serializeLookups(lookups2, BasicFileToPathConverter)
+        (val serializedLookups1 = lookups, val _ = fileIdsToPaths) = CriDataSerializerImpl().serializeLookups(
+            lookups1,
+            BasicFileToPathConverter
+        )
+        (val serializedLookups2 = lookups, val _ = fileIdsToPaths) = CriDataSerializerImpl().serializeLookups(
+            lookups2,
+            BasicFileToPathConverter
+        )
         val serializedLookups = ByteArrayOutputStream().use { stream ->
             stream.write(serializedLookups1)
             stream.write(serializedLookups2)

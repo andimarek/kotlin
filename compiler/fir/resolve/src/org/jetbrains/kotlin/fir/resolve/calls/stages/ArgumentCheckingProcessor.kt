@@ -244,7 +244,7 @@ internal object ArgumentCheckingProcessor {
             argumentTypeWithCustomConversion(
                 expectedType = expectedType,
                 argumentType = argumentTypeForApplicabilityCheck,
-            )?.let { (typeAfterConversion, originalArgumentAsFunctionType) ->
+            )?.let { (val typeAfterConversion, val originalArgumentAsFunctionType = originalTypeAsFunctionType) ->
                 argumentTypeForApplicabilityCheck = typeAfterConversion
                 originalFunctionType = originalArgumentAsFunctionType
                 isFromSimpleToCustom = true
@@ -253,7 +253,7 @@ internal object ArgumentCheckingProcessor {
             argumentTypeWithUnitConversion(
                 expectedType = expectedType,
                 argumentType = argumentTypeForApplicabilityCheck,
-            )?.let { (typeAfterConversion, originalArgumentAsFunctionType) ->
+            )?.let { (val typeAfterConversion, val originalArgumentAsFunctionType = originalTypeAsFunctionType) ->
                 argumentTypeForApplicabilityCheck = typeAfterConversion
                 if (originalFunctionType == null) {
                     originalFunctionType = originalArgumentAsFunctionType

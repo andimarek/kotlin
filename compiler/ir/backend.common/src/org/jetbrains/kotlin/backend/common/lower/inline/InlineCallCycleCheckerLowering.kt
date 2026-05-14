@@ -66,7 +66,7 @@ class InlineCallCycleCheckerLowering<Context : LoweringContext>(val context: Con
         fun CallNode.dfs(call: IrCall?) {
             if (visited.contains(this)) {
                 if (!completed.contains(this)) {
-                    val edgesInCycle = inlineCallsStack.takeLastWhile { (_, callNode) -> callNode != this } + CallEdge(call, this)
+                    val edgesInCycle = inlineCallsStack.takeLastWhile { (val _ = call, val callNode) -> callNode != this } + CallEdge(call, this)
                     reportInlineCallCycle(edgesInCycle)
                 }
                 return
@@ -75,7 +75,7 @@ class InlineCallCycleCheckerLowering<Context : LoweringContext>(val context: Con
             inlineCallsStack += CallEdge(call, this)
             visited += this
 
-            callGraph[this]?.forEach { (call, node) -> node.dfs(call) }
+            callGraph[this]?.forEach { (val call, val node = callNode) -> node.dfs(call) }
 
             inlineCallsStack.removeLast()
             completed += this
