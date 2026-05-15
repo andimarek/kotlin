@@ -200,13 +200,25 @@ internal class SpecializationInterpreter(
  * @return The index of the specialized generic that is the return type of the call
  */
 internal fun AbstractInsnNode.isCallWithSpecializedReturnType(): SpecTypeParametersUsages.Usage? {
-    if (this !is InvokeDynamicInsnNode || !this.isSpecBootstrapCall) return null
-    val returnTypeGenericUsage = SpecTypeParametersUsages.decode(this.bsmArgs[2] as String).returnType ?: return null
-    val specializedTypeParameters = LightIrType.decodeTypeParameters(this.bsmArgs[3] as String)
-    val returnTypeSpecializedTo = returnTypeGenericUsage.adjustType(specializedTypeParameters) ?: return null
-    val returnTypeParameter = returnTypeSpecializedTo.classifier as? LightIrType.Classifier.TypeParameter ?: return null
-    if (!returnTypeParameter.specialized) return null
-    return SpecTypeParametersUsages.Usage(returnTypeParameter.index, returnTypeSpecializedTo.nullable)
+    if (this is InvokeDynamicInsnNode && this.isSpecBootstrapCall) {
+        val returnTypeGenericUsage = SpecTypeParametersUsages.decode(this.bsmArgs[2] as String).returnType ?: return null
+        val specializedTypeParameters = LightIrType.decodeTypeParameters(this.bsmArgs[3] as String)
+        val returnTypeSpecializedTo = returnTypeGenericUsage.adjustType(specializedTypeParameters) ?: return null
+        val returnTypeParameter = returnTypeSpecializedTo.classifier as? LightIrType.Classifier.TypeParameter ?: return null
+        if (!returnTypeParameter.specialized) return null
+        return SpecTypeParametersUsages.Usage(returnTypeParameter.index, returnTypeSpecializedTo.nullable)
+    }
+
+    if (this is MethodInsnNode &&
+        this.opcode == Opcodes.INVOKESTATIC &&
+        this.owner == "kotlin/jvm/internal/Intrinsics" &&
+        this.name.startsWith("unboxMarker")
+    ) {
+        val typeParameterUsageStr = this.name.substring("unboxMarker".length)
+        return SpecTypeParametersUsages.Usage.decode(typeParameterUsageStr)
+    }
+
+    return null
 }
 
 internal data class SpecializationValue(val size_: Int, val genericUsage: SpecTypeParametersUsages.Usage? = null) : Value {

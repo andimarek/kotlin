@@ -306,15 +306,14 @@ private fun peeholeAdapt(
                 val descArgs = Type.getArgumentTypes(insn.desc)
                 var descReturnType = Type.getReturnType(insn.desc)
                 for ((parameterIndex, usage) in nestedSpecTypeParametersUsages.parameterGenericIndices) {
-                    if (usage.nullable) error("nullable usages in nested calls are not supported yet")
-                    nestedTypeParameters[usage.genericIndex]
+                    usage.adjustType(nestedTypeParameters)
                         ?.let { SpecializedTypeAbi.fromLightIrType(it) }
-                        ?.let { descArgs[parameterIndex] = Type.getType(it.reprDesc) }
+                        ?.also { descArgs[parameterIndex] = Type.getType(it.reprDesc) }
                 }
                 nestedSpecTypeParametersUsages.returnType
-                    ?.let { if (it.nullable) error("nullable usages in nested calls are not supported yet"); nestedTypeParameters[it.genericIndex] }
+                    ?.adjustType(nestedTypeParameters)
                     ?.let { SpecializedTypeAbi.fromLightIrType(it) }
-                    ?.let { descReturnType = Type.getType(it.reprDesc) }
+                    ?.also { descReturnType = Type.getType(it.reprDesc) }
                 insn.desc = Type.getMethodType(descReturnType, *descArgs).descriptor
                 insn.bsmArgs[3] = nestedTypeParameters.entries.joinToString("\n") { (k, v) -> "$k=${v.encode()}" }
             }
