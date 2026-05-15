@@ -45,6 +45,11 @@ fun RepositoryHandler.mavenRepoMirror(): ArtifactRepository? {
     return maven { repo ->
         repo.name = "mavenRepoMirror"
         repo.url = File(mirrorDir).toURI()
+        // Exclude org.jetbrains.kotlin — current SNAPSHOT artifacts come from filteredMavenLocal().
+        // The mirror has old kotlin versions that would conflict with version alignment.
+        repo.mavenContent { content ->
+            content.excludeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+        }
     }
 }
 

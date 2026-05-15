@@ -58,11 +58,23 @@ download() {
     fi
 }
 
-# Create an empty stub file (valid empty ZIP for .jar/.aar, empty file for .klib)
+# Create an empty stub file (valid empty ZIP for .jar, AAR with classes.jar for .aar, empty for .klib)
 create_stub() {
     local dest="$1"
     local ext="${dest##*.}"
-    if [ "$ext" = "jar" ] || [ "$ext" = "aar" ]; then
+    if [ "$ext" = "aar" ]; then
+        # AAR must contain classes.jar for AGP's artifact transform
+        python3 -c "
+import zipfile, io
+buf = io.BytesIO()
+with zipfile.ZipFile(buf, 'w') as outer:
+    inner = io.BytesIO()
+    with zipfile.ZipFile(inner, 'w') as jar:
+        pass
+    outer.writestr('classes.jar', inner.getvalue())
+open('$dest', 'wb').write(buf.getvalue())
+"
+    elif [ "$ext" = "jar" ]; then
         echo "$EMPTY_JAR_HEX" | xxd -r -p > "$dest"
     else
         : > "$dest"
