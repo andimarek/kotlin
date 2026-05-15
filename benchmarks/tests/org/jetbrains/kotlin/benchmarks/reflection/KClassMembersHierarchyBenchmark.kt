@@ -24,6 +24,30 @@ open class KClassMembersHierarchyBenchmark {
     }
     @Benchmark
     open fun membersToString(): String {
-        return targetClass.members.joinToString { it.toString() }
+        return JavaFinalLayer::class.members.joinToString { it.toString() }
     }
+    @Benchmark
+    open fun membersToString1(): String {
+        return JavaFinalLayer::class.members.joinToString { it.toString() }
+    }
+    @Benchmark
+    open fun membersToString2(): String {
+        return JavaFinalLayer::class.members.joinToString { it.toString() }
+    }
+
+    @Benchmark
+    open fun parentMembersToString(): String {
+        return JavaFinalLayerChildNoDeclared::class.members.joinToString { it.toString() }
+    }
+
+    @Benchmark
+    open fun parentMembersToString1(): String {
+        return JavaFinalLayerChildNoDeclared::class.members.joinToString { it.toString() }
+    }
+
+    @Benchmark
+    open fun parentMembersToString2(): String {
+        return JavaFinalLayerChildNoDeclared::class.members.joinToString { it.toString() }
+    }
+
 }

@@ -209,3 +209,5 @@ class JavaFinalLayer extends JavaConcreteLayer1 {
         return text.length();
     }
 }
+
+class JavaFinalLayerChildNoDeclared extends JavaFinalLayer {}
