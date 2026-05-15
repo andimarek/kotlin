@@ -317,7 +317,7 @@ private fun CodeGenerator.getVirtualFunctionTrampolineImpl(irFunction: IrSimpleF
             val targetName = if (irFunction.isExported())
                 irFunction.computeSymbolName()
             else
-                irFunction.computePrivateSymbolName(irFunction.parentAsClass.fqNameForIrSerialization.asString())
+                "${KonanBinaryInterface.MANGLE_FUN_PREFIX}:${irFunction.fqNameForIrSerialization}"
             val proto = LlvmFunctionProto(
                     name = "$targetName-trampoline",
                     signature = LlvmFunctionSignature(irFunction, this),
@@ -370,7 +370,7 @@ internal fun CodeGenerator.emitFinalFunctionTrampolineAlias(irFunction: IrSimple
     val targetName = if (irFunction.isExported())
         irFunction.computeSymbolName()
     else
-        irFunction.computePrivateSymbolName(irFunction.parentAsClass.fqNameForIrSerialization.asString())
+        "${KonanBinaryInterface.MANGLE_FUN_PREFIX}:${irFunction.fqNameForIrSerialization}"
     val aliasName = "$targetName-trampoline"
     val programAddressSpace = LLVMKotlinGetProgramAddressSpace(llvm.module)
     LLVMAddAlias2(llvm.module, aliasee.functionType, programAddressSpace, aliasee.asCallback(), aliasName)
