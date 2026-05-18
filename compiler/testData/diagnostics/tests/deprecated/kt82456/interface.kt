@@ -10,7 +10,7 @@ class Outer {
         <!INTERFACE_AS_FUNCTION!>IH1<!>()
         <!DEPRECATION_ERROR!>IH2<!>()
         IH3()
-        <!DEPRECATION_ERROR!>IH4<!>()
+        IH4()
     }
 
     @Deprecated("", level = DeprecationLevel.HIDDEN)

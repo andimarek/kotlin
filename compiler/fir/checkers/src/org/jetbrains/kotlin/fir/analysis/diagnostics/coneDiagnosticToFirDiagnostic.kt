@@ -586,7 +586,13 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             FirErrors.DYNAMIC_RECEIVER_EXPECTED_BUT_WAS_NON_DYNAMIC.createOn(source, diagnostic.actualType, session)
         else -> FirErrors.UNRESOLVED_REFERENCE_WRONG_RECEIVER.createOn(source, this.candidateSymbol, session)
     }
-    is ConeNoCompanionObject -> FirErrors.NO_COMPANION_OBJECT.createOn(source, this.candidateSymbol as FirClassLikeSymbol<*>, session)
+    is ConeNoCompanionObject -> {
+        // Candidate symbol might also be `invoke` defined in a hidden companion object.
+        // In this case, we will report deprecation error in checker.
+        (this.candidateSymbol as? FirClassLikeSymbol<*>)?.let {
+            FirErrors.NO_COMPANION_OBJECT.createOn(source, it, session)
+        }
+    }
 
     is ConeOperatorAmbiguityError -> FirErrors.ASSIGN_OPERATOR_AMBIGUITY.createOn(source, this.candidateSymbols, session)
     is ConeVariableExpectedError -> FirErrors.VARIABLE_EXPECTED.createOn(source, session)
