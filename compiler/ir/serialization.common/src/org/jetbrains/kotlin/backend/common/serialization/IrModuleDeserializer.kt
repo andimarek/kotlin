@@ -141,14 +141,14 @@ class IrModuleDeserializerWithBuiltIns(
     }
 
     private val signatureComputer = PublicIdSignatureComputer(mangler)
-    private val syntheticProvider by lazy {
-        val descriptor = IrBuiltinsPackageFragmentDescriptorImpl(delegate.moduleDescriptor, StandardClassIds.BASE_INTERNAL_IR_PACKAGE)
-        IrSyntheticProvider(
-            packageFragmentDescriptor = descriptor,
-            symbolTable = symbolTable,
-            signatureComputer = signatureComputer::computeSignature
-        )
-    }
+    private val syntheticProvider = IrSyntheticProvider(
+        packageFragmentDescriptor = IrBuiltinsPackageFragmentDescriptorImpl(
+            delegate.moduleDescriptor,
+            StandardClassIds.BASE_INTERNAL_IR_PACKAGE
+        ),
+        symbolTable = symbolTable,
+        signatureComputer = signatureComputer::computeSignature
+    )
 
     private val syntheticFunctionClassGenerator = IrBasedFunctionFactory(
         delegate.moduleFragment,
@@ -164,11 +164,9 @@ class IrModuleDeserializerWithBuiltIns(
         builtIns.functionFactory = this
     }
 
-    private val irBuiltInsMap by lazy {
-        syntheticProvider.operatorsPackageFragment.declarations.associate {
-            val symbol = (it as IrSymbolOwner).symbol
-            symbol.signature to symbol
-        }
+    private val irBuiltInsMap = syntheticProvider.operatorsPackageFragment.declarations.associate {
+        val symbol = (it as IrSymbolOwner).symbol
+        symbol.signature to symbol
     }
 
     override operator fun contains(idSig: IdSignature): Boolean {
