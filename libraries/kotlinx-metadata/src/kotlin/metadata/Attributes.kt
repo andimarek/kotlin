@@ -301,7 +301,7 @@ public var KmFunction.returnValueStatus: ReturnValueStatus by returnValueStatusD
  * Indicates whether the function is compiled as static on the JVM.
  * It is true for functions declared in the companion blocks or as companion extensions.
  *
- * Note that there are some other functions that are also compiled as static, such as `Enum.entries`
+ * Note that there are some other functions that are also compiled as static, such as `Enum.valueOf`
  * or ones produced by `@JvmStatic`, but they do not have metadata on their own,
  * and thus this flag is not related to them.
  */
