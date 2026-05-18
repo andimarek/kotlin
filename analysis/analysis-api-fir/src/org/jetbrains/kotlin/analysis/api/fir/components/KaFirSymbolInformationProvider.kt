@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.analysis.api.fir.components
 
-import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationUseSiteTarget
 import org.jetbrains.kotlin.analysis.api.components.KaDeprecation
 import org.jetbrains.kotlin.analysis.api.components.KaDeprecationLevel
 import org.jetbrains.kotlin.analysis.api.components.KaReturnValueStatus
@@ -19,7 +18,6 @@ import org.jetbrains.kotlin.analysis.api.fir.utils.firSymbol
 import org.jetbrains.kotlin.analysis.api.fir.utils.withSymbolAttachment
 import org.jetbrains.kotlin.analysis.api.impl.base.components.KaBaseDeprecation
 import org.jetbrains.kotlin.analysis.api.impl.base.components.KaBaseSymbolInformationProvider
-import org.jetbrains.kotlin.analysis.api.impl.base.components.toCompilerTarget
 import org.jetbrains.kotlin.analysis.api.impl.base.components.toKaLevel
 import org.jetbrains.kotlin.analysis.api.lifetime.withValidityAssertion
 import org.jetbrains.kotlin.analysis.api.symbols.*
@@ -147,19 +145,6 @@ internal class KaFirSymbolInformationProvider(
         // deprecation annotation type aliases do not work in Kotlin, either, but this might change in the future.)
         val deprecationAnnotationSimpleNames = analysisSession.firSession.annotationPlatformSupport.deprecationAnnotationsSimpleNames
         return annotationSimpleNames.any { it != null && it in deprecationAnnotationSimpleNames }
-    }
-
-    override fun KaSymbol.deprecation(useSiteTarget: KaAnnotationUseSiteTarget?): KaDeprecation? = withValidityAssertion {
-        if (this is KaReceiverParameterSymbol) return null
-
-        require(this is KaFirSymbol<*>)
-
-        val firDeprecationInfo = when {
-            useSiteTarget != null -> firSymbol.getDeprecationForCallSite(analysisSession.firSession, useSiteTarget.toCompilerTarget())
-            else -> firSymbol.getDeprecationForCallSite(analysisSession.firSession)
-        }
-
-        return firDeprecationInfo?.toKaDeprecation()
     }
 
     @Deprecated("Use 'deprecation()' instead", level = DeprecationLevel.HIDDEN)
