@@ -235,13 +235,7 @@ class ScriptingProcessSourcesBeforeCompilingExtension(val project: Project) : Pr
             when {
                 nonScriptFilenameSuffixes.any { ktFile.virtualFilePath.endsWith(it) } -> true
                 !ktFile.isStandaloneScript() -> true
-                else -> {
-                    configuration.report(
-                        CliDiagnostics.SCRIPTING_WARNING,
-                        "Script '${ktFile.name}' is not supposed to be used along with regular Kotlin sources, and will be ignored in the future versions by default. (Use -Xallow-any-scripts-in-source-roots command line option to opt-in for the old behavior.)"
-                    )
-                    false
-                }
+                else -> false
             }
         }
     }
