@@ -61,6 +61,10 @@ data class KotlinWebpackConfig(
     var progressReporter: Boolean = false,
     var resolveFromModulesFirst: Boolean = false,
     var resolveLoadersFromKotlinToolingDir: Boolean = false,
+    /**
+     * Defines expressions that will be substituted in the final bundle file
+     */
+    var definedExpressions: MutableMap<String, String> = mutableMapOf(),
 ) : WebpackRulesDsl {
 
     val entryInput: String?
@@ -295,6 +299,7 @@ data class KotlinWebpackConfig(
             }
             appendErrorPlugin()
             appendFromConfigDir()
+            appendDefinePluginForBrowser()
             appendExperiments()
 
             if (export) {
@@ -339,6 +344,31 @@ data class KotlinWebpackConfig(
         }
         appendLine("}")
     }
+
+    private fun Appendable.appendDefinePluginForBrowser() {
+        if (definedExpressions.isEmpty()) return
+
+        //language=JavaScript 1.8
+        appendLine(
+            """
+                // Define plugin for browser
+                ;(function(config) {
+                    const webpack = require("webpack");
+
+                    config.plugins.push(
+                        new webpack.DefinePlugin({
+${definedExpressions()}
+                        })
+                    )
+                })(config);
+                
+            """.trimIndent()
+        )
+    }
+
+    private fun definedExpressions() = definedExpressions.map { (expression, value) ->
+        "${expression.jsQuoted()}: $value"
+    }.joinToString(separator = ",\n") { "    ".repeat(7) + it }
 
     private fun Appendable.appendSourceMaps() {
         if (!sourceMaps) return
@@ -507,3 +537,11 @@ private fun String.unquoteRawJsRelativePath(): String {
         "require('path').resolve(__dirname, \"" + match.groupValues[1] + "\")"
     }
 }
+
+internal fun defaultWasmDefinedExpressions(): MutableMap<String, String> = mutableMapOf(
+    "typeof process" to "JSON.stringify('undefined')",
+    "typeof Deno" to "JSON.stringify('undefined')",
+    "typeof d8" to "JSON.stringify('undefined')",
+    "typeof inIon" to "JSON.stringify('undefined')",
+    "typeof jscOptions" to "JSON.stringify('undefined')",
+)

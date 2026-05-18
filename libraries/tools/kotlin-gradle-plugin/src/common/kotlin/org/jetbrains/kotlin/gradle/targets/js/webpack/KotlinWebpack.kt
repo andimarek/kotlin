@@ -251,7 +251,8 @@ internal constructor(
         devtool = devtool,
         sourceMaps = sourceMaps,
         resolveFromModulesFirst = resolveFromModulesFirst,
-        resolveLoadersFromKotlinToolingDir = getIsWasm.get()
+        resolveLoadersFromKotlinToolingDir = getIsWasm.get(),
+        definedExpressions = if (getIsWasm.get()) defaultWasmDefinedExpressions() else mutableMapOf(),
     )
 
     private fun createRunner(): KotlinWebpackRunner {
