@@ -2149,6 +2149,11 @@ open class PsiRawFirBuilder(
                         companionBlockCollector.collect(it.toFirSourceElement(), isNested = isDirectlyInsideCompanionBlock)
                         withCompanionBlock {
                             addDeclarations(it.body, delegatedSuperType, delegatedSelfType, owner, companionBlockCollector)
+                            for (danglingModifier in it.body.danglingModifierLists) {
+                                declarations += buildErrorNonLocalDeclarationForDanglingModifierList(danglingModifier).apply {
+                                    containingClassAttr = currentDispatchReceiverType()?.lookupTag
+                                }
+                            }
                         }
                     }
                 }
