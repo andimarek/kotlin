@@ -185,7 +185,7 @@ private fun CompilerConfiguration.checkRedundantArguments(arguments: CommonCompi
             if (checkNecessity(it.feature, it.ifValueIs, LanguageFeature.State.DISABLED)) {
                 this.report(
                     CliDiagnostics.CLI_ARG_DISABLES_STABLE_FEATURE,
-                    "The argument '$renderedArgument' disables a stable language feature for the current language version $languageVersion.",
+                    "The argument '$renderedArgument' disables a stable language feature for the current language version $languageVersion. Future support for this mode is not guaranteed.",
                 )
                 continue@propertiesLoop
             }
