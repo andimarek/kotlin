@@ -745,7 +745,7 @@ object IrTree : AbstractTreeBuilder() {
         parent(constructorCall)
         parent(type<AnnotationMarker>())
 
-        +referencedSymbol("classSymbol", classSymbol, nullable = true)
+        +referencedSymbol("classSymbol", classSymbol, mutable = false)
         +field("argumentMapping", StandardTypes.map.withArgs(type<Name>(), expression))
     }
     val getSingletonValue: Element by element(Expression) {
