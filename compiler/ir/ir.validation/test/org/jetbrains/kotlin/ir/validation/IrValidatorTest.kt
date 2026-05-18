@@ -1023,7 +1023,7 @@ class IrValidatorTest {
                     WARNING,
                     """
                     [IR VALIDATION] IrValidatorTest: The following element references a type parameter 'TYPE_PARAMETER name:T index:0 variance: superTypes:[] reified:false' that is not available in the current scope.
-                    FUN name:nestedClassMethod visibility:public modality:FINAL <> () returnType:org.sample.Outer<T of org.sample.Outer>
+                    FUN name:nestedClassMethod visibility:public modality:FINAL <> () returnType:org.sample.Outer<T of org.sample.Outer> [static]
                       inside CLASS CLASS name:Nested modality:FINAL visibility:public superTypes:[]
                         inside CLASS CLASS name:Outer modality:FINAL visibility:public superTypes:[]
                           inside FILE fqName:org.sample fileName:test.kt
@@ -1035,9 +1035,9 @@ class IrValidatorTest {
                     """
                     [IR VALIDATION] IrValidatorTest: The following element references a type parameter 'TYPE_PARAMETER name:T index:0 variance: superTypes:[] reified:false' that is not available in the current scope.
                     GET_VAR '<this>: org.sample.Outer<T of org.sample.Outer> declared in org.sample.Outer' type=org.sample.Outer<T of org.sample.Outer> origin=null
-                      inside RETURN type=kotlin.Nothing from='public final fun nestedClassMethod (): org.sample.Outer<T of org.sample.Outer> declared in org.sample.Outer.Nested'
+                      inside RETURN type=kotlin.Nothing from='public final fun nestedClassMethod (): org.sample.Outer<T of org.sample.Outer> [static] declared in org.sample.Outer.Nested'
                         inside BLOCK_BODY
-                          inside FUN name:nestedClassMethod visibility:public modality:FINAL <> () returnType:org.sample.Outer<T of org.sample.Outer>
+                          inside FUN name:nestedClassMethod visibility:public modality:FINAL <> () returnType:org.sample.Outer<T of org.sample.Outer> [static]
                             inside CLASS CLASS name:Nested modality:FINAL visibility:public superTypes:[]
                               inside CLASS CLASS name:Outer modality:FINAL visibility:public superTypes:[]
                                 inside FILE fqName:org.sample fileName:test.kt
@@ -1049,9 +1049,9 @@ class IrValidatorTest {
                     """
                     [IR VALIDATION] IrValidatorTest: The following expression references a value that is not available in the current scope.
                     GET_VAR '<this>: org.sample.Outer<T of org.sample.Outer> declared in org.sample.Outer' type=org.sample.Outer<T of org.sample.Outer> origin=null
-                      inside RETURN type=kotlin.Nothing from='public final fun nestedClassMethod (): org.sample.Outer<T of org.sample.Outer> declared in org.sample.Outer.Nested'
+                      inside RETURN type=kotlin.Nothing from='public final fun nestedClassMethod (): org.sample.Outer<T of org.sample.Outer> [static] declared in org.sample.Outer.Nested'
                         inside BLOCK_BODY
-                          inside FUN name:nestedClassMethod visibility:public modality:FINAL <> () returnType:org.sample.Outer<T of org.sample.Outer>
+                          inside FUN name:nestedClassMethod visibility:public modality:FINAL <> () returnType:org.sample.Outer<T of org.sample.Outer> [static]
                             inside CLASS CLASS name:Nested modality:FINAL visibility:public superTypes:[]
                               inside CLASS CLASS name:Outer modality:FINAL visibility:public superTypes:[]
                                 inside FILE fqName:org.sample fileName:test.kt
@@ -1931,8 +1931,8 @@ class IrValidatorTest {
                 Message(
                     WARNING,
                     """
-                    [IR VALIDATION] IrValidatorTest: Overrides private declaration FUN name:foo visibility:private modality:FINAL <> () returnType:kotlin.Unit
-                    FUN name:foo visibility:public modality:FINAL <> () returnType:kotlin.Unit
+                    [IR VALIDATION] IrValidatorTest: Overrides private declaration FUN name:foo visibility:private modality:FINAL <> () returnType:kotlin.Unit [static]
+                    FUN name:foo visibility:public modality:FINAL <> () returnType:kotlin.Unit [static]
                       inside CLASS CLASS name:MySubclass modality:FINAL visibility:public superTypes:[org.sample.MyClass]
                         inside FILE fqName:org.sample fileName:test.kt
                     """.trimIndent(),
