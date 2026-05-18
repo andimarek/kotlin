@@ -111,7 +111,7 @@ class CustomKotlinLikeDumpStrategyTest {
         assertEquals(
             """
                 class Example {
-                  /* static */ fun use() {
+                  companion /* static */ fun use() {
                     create()
                   }
 
@@ -137,7 +137,7 @@ class CustomKotlinLikeDumpStrategyTest {
         assertEquals(
             """
                 class Example {
-                  /* static */ fun use() {
+                  companion /* static */ fun use() {
                     InstanceFactory.Companion.create()
                   }
 
@@ -164,7 +164,7 @@ class CustomKotlinLikeDumpStrategyTest {
         assertEquals(
             """
                 class Example {
-                  /* static */ fun use() {
+                  companion /* static */ fun use() {
                     InstanceFactory.create()
                   }
 
