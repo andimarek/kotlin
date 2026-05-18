@@ -186,26 +186,34 @@ fun Project.enableDependencyVerification(enabled: Boolean = true) {
 }
 
 /**
- * Adds the Maven repo mirror (third-party deps with real metadata, stub binaries)
- * to every test project. The mirror path is passed from the test task via system property.
+ * Adds build-local repositories to every test project so that dependency resolution
+ * works without network access or shared mutable state (~/.m2).
+ *
+ * - **kotlinBuildDeps**: current Kotlin build artifacts (kotlin-stdlib, kotlin-test, etc.)
+ *   copied from publishToMavenLocal output by the populateFunctionalTestRepo task.
+ * - **mavenRepoMirror**: third-party deps (okio, mvikotlin, coroutines, etc.) with real
+ *   metadata but stub binaries, checked into git as a tar.gz archive.
  */
 fun Project.addMavenRepoMirror() {
-    val mirrorDir = System.getProperty("mavenRepoMirrorDir") ?: return
-    // Mirror for third-party deps (real metadata, stub binaries)
-    repositories.maven { repo ->
-        repo.name = "mavenRepoMirror"
-        repo.url = java.io.File(mirrorDir).toURI()
-        // Exclude org.jetbrains.kotlin — current build artifacts come from filteredMavenLocal().
-        // The mirror contains old kotlin versions (1.7.10, 1.9.0 etc.) that would conflict
-        // with version alignment if served alongside the current build version.
-        repo.mavenContent { content ->
-            content.excludeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+    // Current Kotlin build artifacts
+    System.getProperty("functionalTestDepsDir")?.let { depsDir ->
+        repositories.maven { repo ->
+            repo.name = "kotlinBuildDeps"
+            repo.url = java.io.File(depsDir).toURI()
         }
     }
-    // Current Kotlin build artifacts from ~/.m2 (published by publishToMavenLocal)
-    @Suppress("DEPRECATION")
-    repositories.mavenLocal { repo ->
-        repo.mavenContent { it.includeGroupByRegex(".*jetbrains.*") }
+    // Third-party deps mirror
+    System.getProperty("mavenRepoMirrorDir")?.let { mirrorDir ->
+        repositories.maven { repo ->
+            repo.name = "mavenRepoMirror"
+            repo.url = java.io.File(mirrorDir).toURI()
+            // Exclude org.jetbrains.kotlin — current build artifacts come from kotlinBuildDeps.
+            // The mirror contains old kotlin versions (1.7.10, 1.9.0 etc.) that would conflict
+            // with version alignment if served alongside the current build version.
+            repo.mavenContent { content ->
+                content.excludeGroupByRegex("org\\.jetbrains\\.kotlin.*")
+            }
+        }
     }
 }
 
