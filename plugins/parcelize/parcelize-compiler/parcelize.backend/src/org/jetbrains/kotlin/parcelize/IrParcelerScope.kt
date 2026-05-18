@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.typeOrNull
-import org.jetbrains.kotlin.ir.util.constructedClass
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.parcelize.ParcelizeNames.TYPE_PARCELER_FQ_NAMES
 import org.jetbrains.kotlin.parcelize.ParcelizeNames.WRITE_WITH_FQ_NAMES
@@ -41,7 +40,7 @@ fun IrParcelerScope?.hasCustomSerializer(irType: IrType): Boolean {
 
 fun IrAnnotationContainer.getParcelerScope(parent: IrParcelerScope? = null): IrParcelerScope? {
     val typeParcelerAnnotations = annotations.filterTo(mutableListOf()) {
-        it.symbol.owner.constructedClass.fqNameWhenAvailable in TYPE_PARCELER_FQ_NAMES
+        it.classSymbol.owner.fqNameWhenAvailable in TYPE_PARCELER_FQ_NAMES
     }
 
     if (typeParcelerAnnotations.isEmpty())

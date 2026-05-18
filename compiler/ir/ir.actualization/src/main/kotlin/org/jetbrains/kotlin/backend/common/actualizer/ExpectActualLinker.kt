@@ -276,7 +276,7 @@ internal open class ActualizerVisitor(
         transformAnnotations(this)
         if (!membersActualization) return
         val newAnnotations = annotations.memoryOptimizedMapNotNull { annotation ->
-            val annotationClass = annotation.symbol.owner.constructedClass
+            val annotationClass = annotation.classSymbol.owner
             when {
                 annotationClass.isExpect && annotationClass.containsOptionalExpectation() -> null
                 else -> annotation
