@@ -1,0 +1,43 @@
+digraph JavaFinalLayerInheritance {
+    rankdir=BT;
+    node [shape=record, style=filled, fontname="Helvetica"];
+
+    // Interfaces
+    node [fillcolor="#E3F2FD"];
+    JavaBaseContract [label="{«interface»\nJavaBaseContract|+ abstractBase0(int): int\l+ abstractBase1(String): String\l+ implementedBase0(int): int [default]\l+ implementedBase1(String): String [default]\l}"];
+    JavaMidContractA [label="{«interface»\nJavaMidContractA|+ abstractMidA0(long): long\l+ abstractMidA1(CharSequence): CharSequence\l+ implementedBase0(int): int [default, override]\l+ implementedMidA0(long): long [default]\l}"];
+    JavaMidContractB [label="{«interface»\nJavaMidContractB|+ abstractMidB0(double): double\l+ implementedBase1(String): String [default, override]\l+ implementedMidB0(double): double [default]\l}"];
+    JavaSideLayerA   [label="{«interface»\nJavaSideLayerA|+ sideLayer00(String): String [default]\l+ sideLayerA11(int): int [default]\l+ sideLayer10(int, long): long [default]\l+ sideLayerA11(String): String [default]\l}"];
+    JavaSideLayerB   [label="{«interface»\nJavaSideLayerB|+ concreteLayer00(String): String [abstract]\l+ concreteLayer01(int): int [abstract]\l+ sideLayerB11(int): int [default]\l+ sideLayerB11(String): String [default]\l}"];
+
+    // Abstract classes
+    node [fillcolor="#FFF3E0"];
+    JavaAbstractLayer0 [label="{«abstract»\nJavaAbstractLayer0|# abstractLayer0(String): String [abstract]\l+ abstractBase1(String): String [override]\l+ abstractMidA1(CharSequence): CharSequence [override]\l# implementedLayer0(String): String\l}"];
+    JavaAbstractLayer1 [label="{«abstract»\nJavaAbstractLayer1|# abstractLayer1(int, String): String [abstract]\l+ abstractBase0(int): int [override]\l+ abstractMidB0(double): double [override]\l# implementedLayer1(int, String): String\l}"];
+
+    // Concrete classes
+    node [fillcolor="#E8F5E9"];
+    JavaConcreteLayer0 [label="{JavaConcreteLayer0|+ abstractMidA0(long): long [override]\l# abstractLayer0(String): String [override]\l# abstractLayer1(int, String): String [override]\l+ concreteLayer00(String): String\l+ concreteLayer01(int): int\l}"];
+    JavaConcreteLayer1 [label="{JavaConcreteLayer1|# concreteLayer10(int, long): long\l# concreteLayer11(String): String\l// inherits concreteLayer00/01 (satisfies JavaSideLayerB)\l}"];
+
+    // Target class
+    node [fillcolor="#FFCDD2"];
+    JavaFinalLayer [label="{JavaFinalLayer|# concreteLayer10(int, long): long [override]\l# concreteLayer11(String): String [override]\l# finalOwn0(int): boolean\l# finalOwn1(String): int\l+ static finalOwnStatic0(int): boolean\l+ static finalOwnStatic1(String): int\l// re-declares 'implements JavaSideLayerB'\l// concreteLayer00/01 still satisfied via JavaConcreteLayer0\l}"];
+
+    // Inheritance edges (extends) - solid arrows
+    edge [arrowhead=onormal, style=solid];
+    JavaFinalLayer     -> JavaConcreteLayer1;
+    JavaConcreteLayer1 -> JavaConcreteLayer0;
+    JavaConcreteLayer0 -> JavaAbstractLayer1;
+    JavaAbstractLayer1 -> JavaAbstractLayer0;
+    JavaMidContractA   -> JavaBaseContract;
+    JavaMidContractB   -> JavaBaseContract;
+
+    // Implementation edges (implements) - dashed arrows
+    edge [arrowhead=onormal, style=dashed];
+    JavaFinalLayer     -> JavaSideLayerB;
+    JavaConcreteLayer1 -> JavaSideLayerB;
+    JavaConcreteLayer1 -> JavaSideLayerA;
+    JavaAbstractLayer1 -> JavaMidContractB;
+    JavaAbstractLayer0 -> JavaMidContractA;
+}

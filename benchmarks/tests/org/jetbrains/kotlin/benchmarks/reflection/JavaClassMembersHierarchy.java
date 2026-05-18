@@ -14,15 +14,7 @@ interface JavaBaseContract {
         return value + 1;
     }
 
-    static int implementedBase0Static(int value) {
-        return value + 1;
-    }
-
     default String implementedBase1(String text) {
-        return new StringBuilder(text).reverse().toString();
-    }
-
-    static String implementedBase1Static(String text) {
         return new StringBuilder(text).reverse().toString();
     }
 }
@@ -37,15 +29,7 @@ interface JavaMidContractA extends JavaBaseContract {
         return value * 2;
     }
 
-    static int implementedBase0Static(int value) {
-        return value * 2;
-    }
-
     default long implementedMidA0(long value) {
-        return value * value;
-    }
-
-    static long implementedMidA0Static(long value) {
         return value * value;
     }
 }
@@ -58,15 +42,7 @@ interface JavaMidContractB extends JavaBaseContract {
         return text.toUpperCase();
     }
 
-    static String implementedBase1Static(String text) {
-        return text.toUpperCase();
-    }
-
     default double implementedMidB0(double value) {
-        return value / 2.0;
-    }
-
-    static double implementedMidB0Static(double value) {
         return value / 2.0;
     }
 }
@@ -87,10 +63,6 @@ abstract class JavaAbstractLayer0 implements JavaMidContractA {
     String implementedLayer0(String value) {
         return value.trim();
     }
-
-    static String implementedLayer0Static(String value) {
-        return value.trim();
-    }
 }
 
 abstract class JavaAbstractLayer1 extends JavaAbstractLayer0 implements JavaMidContractB {
@@ -107,10 +79,6 @@ abstract class JavaAbstractLayer1 extends JavaAbstractLayer0 implements JavaMidC
     }
 
     String implementedLayer1(int value, String text) {
-        return value + "-" + text;
-    }
-
-    static String implementedLayer1Static(int value, String text) {
         return value + "-" + text;
     }
 }
@@ -137,52 +105,60 @@ class JavaConcreteLayer0 extends JavaAbstractLayer1 {
         return result.toString();
     }
 
-    String concreteLayer00(String value) {
+    public String concreteLayer00(String value) {
         return value + "!";
     }
 
-    static String concreteLayer00Static(String value) {
-        return value + "!";
-    }
-
-    int concreteLayer01(int value) {
-        return value * 3;
-    }
-
-    static int concreteLayer01Static(int value) {
+    public int concreteLayer01(int value) {
         return value * 3;
     }
 }
 
-class JavaConcreteLayer1 extends JavaConcreteLayer0 {
-    @Override
-    String concreteLayer00(String value) {
+interface JavaSideLayerA {
+    default String sideLayer00(String value) {
         return "[" + value + "]";
     }
 
-    @Override
-    int concreteLayer01(int value) {
-        return super.concreteLayer01(value) + 7;
+    default int sideLayerA11(int value) {
+        return value;
     }
 
-    long concreteLayer10(int value, long extra) {
+    default long sideLayer10(int value, long extra) {
         return value + extra;
     }
 
-    static long concreteLayer10Static(int value, long extra) {
+    default String sideLayerA11(String text) {
+        return text.startsWith("x") ? text.substring(1) : text;
+    }
+}
+
+interface JavaSideLayerB {
+    public String concreteLayer00(String value);
+
+    public int concreteLayer01(int value);
+
+    default int sideLayerB11(int value) {
+        return value;
+    }
+
+
+    default String sideLayerB11(String text) {
+        return text.startsWith("x") ? text.substring(1) : text;
+    }
+}
+
+class JavaConcreteLayer1 extends JavaConcreteLayer0 implements JavaSideLayerB, JavaSideLayerA {
+
+    long concreteLayer10(int value, long extra) {
         return value + extra;
     }
 
     String concreteLayer11(String text) {
         return text.startsWith("x") ? text.substring(1) : text;
     }
-
-    static String concreteLayer11Static(String text) {
-        return text.startsWith("x") ? text.substring(1) : text;
-    }
 }
 
-class JavaFinalLayer extends JavaConcreteLayer1 {
+class JavaFinalLayer extends JavaConcreteLayer1 implements JavaSideLayerB {
     @Override
     long concreteLayer10(int value, long extra) {
         return value * extra;
@@ -210,4 +186,3 @@ class JavaFinalLayer extends JavaConcreteLayer1 {
     }
 }
 
-class JavaFinalLayerChildNoDeclared extends JavaFinalLayer {}

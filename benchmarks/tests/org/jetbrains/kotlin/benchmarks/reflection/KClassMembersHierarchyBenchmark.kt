@@ -11,7 +11,7 @@ import kotlinx.benchmark.State
 import kotlinx.benchmark.TearDown
 import kotlin.reflect.KClass
 
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 open class KClassMembersHierarchyBenchmark {
     private val targetClass: KClass<out JavaFinalLayer> = JavaFinalLayer::class
 
@@ -22,32 +22,52 @@ open class KClassMembersHierarchyBenchmark {
         println("DEBUG Base (abstractBase0): " + targetClass.members.find { it.name == "abstractBase0" }!!::class)
         println("DEBUG Gen (equals):" + targetClass.members.find { it.name == "equals" }!!::class)
     }
+
     @Benchmark
-    open fun membersToString(): String {
-        return JavaFinalLayer::class.members.joinToString { it.toString() }
+    open fun membersToString0(): String {
+        return targetClass.members.joinToString { it.toString() }
     }
+
     @Benchmark
     open fun membersToString1(): String {
-        return JavaFinalLayer::class.members.joinToString { it.toString() }
+        return targetClass.members.joinToString { it.toString() }
     }
     @Benchmark
     open fun membersToString2(): String {
-        return JavaFinalLayer::class.members.joinToString { it.toString() }
+        return targetClass.members.joinToString { it.toString() }
+    }
+    @Benchmark
+    open fun membersToString3(): String {
+        return targetClass.members.joinToString { it.toString() }
+    }
+    @Benchmark
+    open fun membersToString4(): String {
+        return targetClass.members.joinToString { it.toString() }
     }
 
     @Benchmark
-    open fun parentMembersToString(): String {
-        return JavaFinalLayerChildNoDeclared::class.members.joinToString { it.toString() }
+    open fun membersToString5(): String {
+        return targetClass.members.joinToString { it.toString() }
     }
 
     @Benchmark
-    open fun parentMembersToString1(): String {
-        return JavaFinalLayerChildNoDeclared::class.members.joinToString { it.toString() }
+    open fun membersToString6(): String {
+        return targetClass.members.joinToString { it.toString() }
     }
 
     @Benchmark
-    open fun parentMembersToString2(): String {
-        return JavaFinalLayerChildNoDeclared::class.members.joinToString { it.toString() }
+    open fun membersToString7(): String {
+        return targetClass.members.joinToString { it.toString() }
+    }
+
+    @Benchmark
+    open fun membersToString8(): String {
+        return targetClass.members.joinToString { it.toString() }
+    }
+
+    @Benchmark
+    open fun membersToString9(): String {
+        return targetClass.members.joinToString { it.toString() }
     }
 
 }
