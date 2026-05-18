@@ -18,7 +18,6 @@ import org.jetbrains.kotlin.descriptors.SourceElement
 import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrFactory
 import org.jetbrains.kotlin.ir.declarations.IrValueDeclaration
 import org.jetbrains.kotlin.ir.declarations.createBlockBody
@@ -30,6 +29,8 @@ import org.jetbrains.kotlin.ir.types.impl.IrDelegatedSimpleType
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeBuilder
 import org.jetbrains.kotlin.ir.types.impl.buildSimpleType
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
+import org.jetbrains.kotlin.ir.util.isKMutableProperty
+import org.jetbrains.kotlin.ir.util.isKProperty
 import org.jetbrains.kotlin.ir.util.parentAsClass
 import org.jetbrains.kotlin.utils.addToStdlib.assignFrom
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
@@ -97,6 +98,7 @@ class IrBodyDeserializer(
     private val settings: IrDeserializationSettings,
     private val irInterner: IrInterningService,
     private val fileEntryDeserializer: FileEntryDeserializer,
+    private val compatibilityMode: CompatibilityMode = CompatibilityMode.CURRENT,
 ) {
 
     private val fileLoops = hashMapOf<Int, IrLoop>()
@@ -605,6 +607,7 @@ class IrBodyDeserializer(
     }
 
     private fun deserializePropertyReference(proto: ProtoPropertyReference, start: Int, end: Int, type: IrType): IrPropertyReference {
+        val fixedType = fixKProperty2TypeParameterOrderIfNeeded(type)
         val symbol = deserializeTypedSymbol<IrPropertySymbol>(proto.symbol, PROPERTY_SYMBOL)
         val field = deserializeTypedSymbolWhen<IrFieldSymbol>(proto.hasField(), FIELD_SYMBOL) { proto.field }
         val getter = deserializeTypedSymbolWhen<IrSimpleFunctionSymbol>(proto.hasGetter(), FUNCTION_SYMBOL) { proto.getter }
@@ -613,7 +616,7 @@ class IrBodyDeserializer(
         val origin = deserializeIrStatementOrigin(proto.hasOriginName()) { proto.originName }
 
         val callable = IrPropertyReferenceImplRaw(
-            start, end, type,
+            start, end, fixedType,
             symbol,
             field,
             getter,
@@ -624,6 +627,23 @@ class IrBodyDeserializer(
         callable.arguments.addAll(deserializeArguments(proto.argumentList, start))
         callable.typeArguments.addAll(deserializeTypeArguments(proto.typeArgumentList))
         return callable
+    }
+
+    /**
+     * KLIBs compiled with Kotlin <= 2.1 (ABI version <= 1.201.0) have swapped type parameter order
+     * for KProperty2/KMutableProperty2 in member extension properties:
+     * `KProperty2<ExtensionReceiver, DispatchReceiver, Value>` instead of
+     * `KProperty2<DispatchReceiver, ExtensionReceiver, Value>`.
+     * See KT-75112, KT-86180.
+     */
+    private fun fixKProperty2TypeParameterOrderIfNeeded(type: IrType): IrType {
+        if (!compatibilityMode.swappedKProperty2TypeParameterOrder) return type
+        if (type !is IrSimpleType) return type
+        if (type.arguments.size != 3) return type
+        if (!type.isKProperty() && !type.isKMutableProperty()) return type
+        return type.buildSimpleType {
+            arguments = listOf(type.arguments[1], type.arguments[0], type.arguments[2])
+        }
     }
 
     private fun deserializeReturn(proto: ProtoReturn, start: Int, end: Int): IrReturn {
