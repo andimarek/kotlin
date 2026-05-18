@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.GenerateSyntheti
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.GenerateSyntheticLinkageImportProject.SyntheticProductType
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.TransitiveSwiftPMDependencies
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.locateOrRegisterSwiftPMDependenciesExtension
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.FetchSyntheticImportProjectPackages
 import org.jetbrains.kotlin.gradle.testbase.GradleTest
 import org.jetbrains.kotlin.gradle.testbase.GradleTestVersions
 import org.jetbrains.kotlin.gradle.testbase.KGPBaseTest
