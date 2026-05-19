@@ -1,4 +1,6 @@
+// Dexing error is reported as KT-86411
 // IGNORE_DEXING
+
 // MODULE: lib
 // FILE: 1.kt
 
