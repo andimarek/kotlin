@@ -89,12 +89,8 @@ internal abstract class XcodebuildDefFileWorkAction : WorkAction<XcodebuildDefFi
                         && "-target${DUMP_FILE_ARGS_SEPARATOR}${clangArchitecture}-apple" in ldArgs
             }
 
-            val parsedLdCall = architectureSpecificProductLdCalls
-                .map { it to XcodebuildDefFileUtils.parseLdCall(it) }
-                .singleDistinctParsedCall(
-                    dumpKind = "ld",
-                    architecture = clangArchitecture,
-                )
+            val parsedLdCall = XcodebuildDefFileUtils.parseLdCall(architectureSpecificProductLdCalls.single())
+
 
             ldDumpDir.resolve(XcodebuildDefFileUtils.ldFileName(architecture))
                 .writeText(parsedLdCall.ldArgs.joinToString(DUMP_FILE_ARGS_SEPARATOR))

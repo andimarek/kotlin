@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport
 
 import kotlinx.serialization.Serializable
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -84,35 +85,45 @@ internal abstract class DumpXcodeBuildArgs : DefaultTask() {
             // Fingerprints are calculated by a separate task because their inputs are generated during execution.
             // Reading the prepared file here keeps providers pure and avoids configuration-time claiming/rerouting.
             val xcodebuildExecutionHash = xcodebuildExecutionHashFile.get().asFile.readText().trim()
+            val fetchBucket = coordinationService.get().getSwiftResolveBucket(xcodebuildExecutionHash)
 
+            if (fetchBucket != null) {
+                coordinationService.get().awaitSwiftResolved(fetchBucket)
+            }
             // The service decides whether this task owns the expensive xcodebuild execution or can reuse an existing
             // bucket from another task in this invocation or from a validated root-build bucket left by an earlier run.
             val claim = coordinationService.get().claimOrJoinXcodeDump(
                 xcodebuildExecutionHash = xcodebuildExecutionHash,
                 xcodebuildSdk = xcodebuildSdk.get(),
-                sdkDerivedDataDirName = "dd_${xcodebuildSdk.get()}",
             )
 
             when (claim) {
-                is SwiftPMXcodeDumpBuildService.XcodeDumpClaim.Owner -> runOwnerXcodeDump(claim.bucket)
+                is SwiftPMXcodeDumpBuildService.XcodeDumpClaim.Owner -> runOwnerXcodeDump(
+                    bucket = claim.bucket,
+                    syntheticImportProjectRoot = fetchBucket?.ownerSyntheticImportProjectRoot ?: syntheticImportProjectRoot.get(),
+                    swiftPMDependenciesCheckout = fetchBucket?.ownerSwiftPMDependenciesCheckout ?: swiftPMDependenciesCheckout.get(),
+                )
                 is SwiftPMXcodeDumpBuildService.XcodeDumpClaim.Existing -> coordinationService.get().awaitXcodeDump(claim.bucket)
             }
+
         }
     }
 
-    private fun runOwnerXcodeDump(bucket: SwiftPMXcodeDumpBuildService.XcodeDumpBucket) {
+    private fun runOwnerXcodeDump(
+        bucket: SwiftPMXcodeDumpBuildService.XcodeDumpBucket,
+        syntheticImportProjectRoot: Directory,
+        swiftPMDependenciesCheckout: Directory,
+    ) {
         try {
-            // The owner writes directly to the root-build bucket, while still building this task's synthetic package and
-            // using this task's SwiftPM checkout.
             submitXcodebuildArgsDumpWorkAction(
                 ownerDumpDir = bucket.ownerDumpDir,
                 ownerDerivedDataDir = bucket.ownerDerivedDataDir,
+                syntheticImportProjectRoot = syntheticImportProjectRoot,
+                swiftPMDependenciesCheckout = swiftPMDependenciesCheckout,
             )
             workerExecutor.await()
-            // Completion stamps the shared dump and releases any tasks waiting on the same bucket.
             coordinationService.get().markXcodeDumpCompleted(bucket)
         } catch (failure: Throwable) {
-            // Propagate the same failure to every task that joined this bucket.
             coordinationService.get().markXcodeDumpFailed(bucket, failure)
             throw failure
         }
@@ -121,10 +132,10 @@ internal abstract class DumpXcodeBuildArgs : DefaultTask() {
     private fun submitXcodebuildArgsDumpWorkAction(
         ownerDumpDir: File,
         ownerDerivedDataDir: File,
+        syntheticImportProjectRoot: Directory,
+        swiftPMDependenciesCheckout: Directory,
     ) {
         workerExecutor.noIsolation().submit(XcodebuildArgsDumpWorkAction::class.java) { params ->
-            // Most parameters still come from the local task. Only the output locations are overridden with the bucket
-            // owner directories so shared execution writes exactly where waiters will read from.
             params.xcodebuildPlatform.set(xcodebuildPlatform)
             params.xcodebuildSdk.set(xcodebuildSdk)
             params.architectures.set(architectures)
@@ -140,10 +151,3 @@ internal abstract class DumpXcodeBuildArgs : DefaultTask() {
         const val TASK_NAME = "dumpXcodebuildArgs"
     }
 }
-
-@Serializable
-internal data class XcodeDumpLocation(
-    val xcodebuildExecutionHash: String,
-    val dumpedXcodeBuildArgsDir: String,
-    val derivedDataDir: String,
-)

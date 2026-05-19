@@ -5,12 +5,7 @@
 
 package org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
@@ -19,8 +14,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
 import java.util.concurrent.CountDownLatch
 
 internal interface SwiftPMXcodeDumpBuildServiceParameters : BuildServiceParameters {
@@ -39,13 +32,24 @@ internal abstract class SwiftPMXcodeDumpBuildService : BuildService<SwiftPMXcode
     private val stateLock = Any()
 
     /** In-memory buckets for the current Gradle invocation, keyed by the xcodebuild execution fingerprint. */
-    private val bucketsByExecutionHash = mutableMapOf<XcodeDumpBucketMapKey, XcodeDumpBucket>()
+    private val dumpBucketsByExecutionHash = mutableMapOf<XcodeDumpBucketMapKey, XcodeDumpBucket>()
+    private val fetchBucketsByExecutionHash = mutableMapOf<SwiftResolvedBucketMapKey, SwiftResolveBucket>()
 
     class XcodeDumpBucket(
         val id: String,
-        val xcodebuildExecutionHash: String,
         val ownerDumpDir: File,
         val ownerDerivedDataDir: File,
+        val completion: CountDownLatch = CountDownLatch(1),
+        var failure: Throwable? = null,
+        var completed: Boolean = false,
+    )
+
+    class SwiftResolveBucket(
+        val id: String,
+        val ownerPackageResolvedFile: File,
+        val ownerWorkspaceStateFile : File,
+        val ownerSwiftPMDependenciesCheckout: Directory,
+        val ownerSyntheticImportProjectRoot: Directory,
         val completion: CountDownLatch = CountDownLatch(1),
         var failure: Throwable? = null,
         var completed: Boolean = false,
@@ -65,23 +69,69 @@ internal abstract class SwiftPMXcodeDumpBuildService : BuildService<SwiftPMXcode
         data class Existing(override val bucket: XcodeDumpBucket) : XcodeDumpClaim()
     }
 
+
+    sealed class SwiftFetchClaim {
+        abstract val bucket: SwiftResolveBucket
+
+        data class Owner(override val bucket: SwiftResolveBucket) : SwiftFetchClaim()
+        data class Existing(override val bucket: SwiftResolveBucket) : SwiftFetchClaim()
+    }
+
+    fun claimOrJoinSwiftResolve(
+        xcodebuildExecutionHash: String,
+        packageResolvedFile: File,
+        workspaceStateFile : File,
+        swiftPMDependenciesCheckout: Directory,
+        syntheticImportProjectRoot: Directory,
+    ): SwiftFetchClaim {
+        synchronized(stateLock) {
+            val executionKey = SwiftResolvedBucketMapKey(xcodebuildExecutionHash)
+            val existingByExecutionHash = fetchBucketsByExecutionHash[executionKey]
+            if (existingByExecutionHash != null) return SwiftFetchClaim.Existing(existingByExecutionHash)
+
+            val bucketId = xcodebuildExecutionHash
+            val newBucket = SwiftResolveBucket(
+                id = bucketId,
+                ownerPackageResolvedFile = packageResolvedFile,
+                ownerWorkspaceStateFile = workspaceStateFile,
+                ownerSwiftPMDependenciesCheckout = swiftPMDependenciesCheckout,
+                ownerSyntheticImportProjectRoot = syntheticImportProjectRoot,
+            )
+            fetchBucketsByExecutionHash[executionKey] = newBucket
+            return SwiftFetchClaim.Owner(newBucket)
+        }
+    }
+
+    fun findExistingSwiftResolve(
+        xcodebuildExecutionHash: String,
+    ): SwiftFetchClaim.Existing? {
+        synchronized(stateLock) {
+            val executionKey = SwiftResolvedBucketMapKey(xcodebuildExecutionHash)
+            val existingByExecutionHash = fetchBucketsByExecutionHash[executionKey]
+                ?: return null
+
+            return SwiftFetchClaim.Existing(existingByExecutionHash)
+        }
+    }
+
+
+
     fun claimOrJoinXcodeDump(
         xcodebuildExecutionHash: String,
         xcodebuildSdk: String,
-        sdkDerivedDataDirName: String,
     ): XcodeDumpClaim {
         synchronized(stateLock) {
             val executionKey = XcodeDumpBucketMapKey(xcodebuildExecutionHash, xcodebuildSdk)
-            val existingByExecutionHash = bucketsByExecutionHash[executionKey]
+            val existingByExecutionHash = dumpBucketsByExecutionHash[executionKey]
             if (existingByExecutionHash != null) return XcodeDumpClaim.Existing(existingByExecutionHash)
 
             val reusableBucket = findReusableBucketInSharedRoot(
                 xcodebuildExecutionHash = xcodebuildExecutionHash,
                 xcodebuildSdk = xcodebuildSdk,
-                sdkDerivedDataDirName = sdkDerivedDataDirName,
+                sdkDerivedDataDirName = "dd_$xcodebuildSdk",
             )
             if (reusableBucket != null) {
-                bucketsByExecutionHash[executionKey] = reusableBucket
+                dumpBucketsByExecutionHash[executionKey] = reusableBucket
                 return XcodeDumpClaim.Existing(reusableBucket)
             }
 
@@ -92,11 +142,10 @@ internal abstract class SwiftPMXcodeDumpBuildService : BuildService<SwiftPMXcode
             val bucketRoot = sharedBucketRoot(bucketId)
             val newBucket = XcodeDumpBucket(
                 id = bucketId,
-                xcodebuildExecutionHash = xcodebuildExecutionHash,
                 ownerDumpDir = sharedDumpDir(bucketRoot, xcodebuildSdk),
                 ownerDerivedDataDir = sharedDerivedDataDir(bucketRoot),
             )
-            bucketsByExecutionHash[executionKey] = newBucket
+            dumpBucketsByExecutionHash[executionKey] = newBucket
             return XcodeDumpClaim.Owner(newBucket)
         }
     }
@@ -135,6 +184,34 @@ internal abstract class SwiftPMXcodeDumpBuildService : BuildService<SwiftPMXcode
         }
     }
 
+    fun markSwiftResolveCompleted(bucket: SwiftResolveBucket) {
+        synchronized(stateLock) {
+            bucket.completed = true
+            bucket.completion.countDown()
+        }
+    }
+
+    fun markSwiftResolveFailed(bucket: SwiftResolveBucket, failure: Throwable) {
+        synchronized(stateLock) {
+            bucket.failure = failure
+            bucket.completion.countDown()
+        }
+    }
+
+    fun awaitSwiftResolved(bucket: SwiftResolveBucket) {
+        // Joined tasks wait here instead of depending on an owner task. At execution time the Gradle task graph is already
+        // fixed, so a latch inside the build service is the safe coordination primitive.
+        bucket.completion.await()
+        bucket.failure?.let {
+            throw GradleException("Shared SwiftPM xcodebuild dump failed for bucket '${bucket.id}'", it)
+        }
+    }
+
+    fun getSwiftResolveBucket(xcodebuildExecutionHash: String): SwiftResolveBucket? =
+        synchronized(stateLock) {
+            fetchBucketsByExecutionHash[SwiftResolvedBucketMapKey(xcodebuildExecutionHash)]
+        }
+
     private fun findReusableBucketInSharedRoot(
         xcodebuildExecutionHash: String,
         xcodebuildSdk: String,
@@ -152,7 +229,6 @@ internal abstract class SwiftPMXcodeDumpBuildService : BuildService<SwiftPMXcode
 
         return XcodeDumpBucket(
             id = xcodebuildExecutionHash,
-            xcodebuildExecutionHash = xcodebuildExecutionHash,
             ownerDumpDir = ownerDumpDir,
             ownerDerivedDataDir = ownerDerivedDataDir,
             // Root-build buckets discovered from disk are already complete. Joined tasks can pass through awaitXcodeDump
@@ -189,6 +265,10 @@ private data class XcodeDumpBucketMapKey(
     val xcodebuildSdk: String,
 )
 
+//TODO this can be simplified
+private data class SwiftResolvedBucketMapKey(
+    val xcodebuildExecutionHash: String,
+)
 
 internal val dumpTaskFingerprintJson = Json {
     encodeDefaults = true

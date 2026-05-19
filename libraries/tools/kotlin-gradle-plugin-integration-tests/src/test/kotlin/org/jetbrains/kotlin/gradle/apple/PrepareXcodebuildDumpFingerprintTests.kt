@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.gradle.apple
 
 import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.FetchSyntheticImportProjectPackages
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.PackageResolvedSynchronization
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.swiftimport.PrepareXcodeBuildArgsDumpFingerprint
 import org.jetbrains.kotlin.gradle.testbase.GradleTest
@@ -17,14 +18,18 @@ import org.jetbrains.kotlin.gradle.testbase.OsCondition
 import org.jetbrains.kotlin.gradle.testbase.SwiftPMImportGradlePluginTests
 import org.jetbrains.kotlin.gradle.testbase.TestProject
 import org.jetbrains.kotlin.gradle.testbase.TestVersions
+import org.jetbrains.kotlin.gradle.testbase.assertExactTasksInGraph
+import org.jetbrains.kotlin.gradle.testbase.assertFileExists
 import org.jetbrains.kotlin.gradle.testbase.assertTasksExecuted
 import org.jetbrains.kotlin.gradle.testbase.assertTasksUpToDate
 import org.jetbrains.kotlin.gradle.testbase.build
 import org.jetbrains.kotlin.gradle.testbase.project
+import org.jetbrains.kotlin.gradle.uklibs.include
 import org.jetbrains.kotlin.gradle.utils.lowerCamelCaseName
 import org.junit.jupiter.api.condition.OS
 import java.nio.file.Path
 import kotlin.io.path.deleteExisting
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -334,6 +339,137 @@ class PrepareXcodebuildDumpFingerprintTests : KGPBaseTest() {
                     readIphonesimulatorFingerprint(),
                     "Changing Package.resolved synchronization identifier should invalidate the prepare fingerprint task"
                 )
+            }
+        }
+    }
+
+    // when fuzz calling fetch swith two native targets should trigger for both targets.
+    @GradleTest
+    fun `fetch task call triggers existing prepare xcodebuild dump fingerprint task for both targets`(version: GradleVersion) {
+        project("empty", version) {
+            withLockFileFixture {
+                initSwiftPmProject(cacheDirFile) {}
+            }
+
+            build(":fetchSyntheticImportProjectPackages") {
+                assertExactTasksInGraph(
+                    ":generateSyntheticLinkageSwiftPMImportProjectForCinteropsAndLdDump",
+                    ":computeLocalPackageDependencyInputFiles",
+                    ":serializeSwiftPMDependenciesMetadataForLockFiles",
+                    ":${lowerCamelCaseName(PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME, "iphonesimulator")}",
+                    ":${lowerCamelCaseName(PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME, "iphoneos")}",
+                    ":generateUmbrellaPackageIdentifierBasedResolutionForDefault",
+                    ":fetchUmbrellaPackageIdentifierForDefault",
+                    ":syncPersistedPackageResolvedToSynthetic",
+                    ":fetchSyntheticImportProjectPackages"
+                )
+            }
+        }
+    }
+
+    @GradleTestVersions(minVersion = TestVersions.Gradle.G_8_0)
+    @GradleTest
+    fun `various dependencies and build settings generate different fingerprints`(version: GradleVersion) {
+        val useMapsRepo = "useMaps"
+        val useMapsDifferentVersions = "useMapsDifferentVersions"
+
+        project("empty", version) {
+            withLockFileFixture {
+                val mapsRepo = repoRef("Maps").also { createRepo(it.name, listOf("1.0.0", "1.0.1")) }
+                val crpytoRepo = repoRef("Crypto").also { createRepo(it.name, listOf("1.0.0")) }
+
+                initSwiftPmProject(cacheDirFile) {
+                    if (project.hasProperty(useMapsRepo)) {
+                        val version = if (project.hasProperty(useMapsDifferentVersions)) {
+                            "1.0.1"
+                        } else {
+                            "1.0.0"
+                        }
+
+                        swiftPMDependencies {
+                            swiftPackage(
+                                url = url(mapsRepo.url),
+                                version = exact(version),
+                                products = listOf(product(mapsRepo.name))
+                            )
+                        }
+                    } else {
+                        swiftPMDependencies {
+                            swiftPackage(
+                                url = url(crpytoRepo.url),
+                                version = exact("1.0.0"),
+                                products = listOf(product(crpytoRepo.name))
+                            )
+                        }
+                    }
+                }
+
+                val kmpMapsProject = project("empty", version) {
+                    initSwiftPmProject(cacheDirFile) {
+                        swiftPMDependencies {
+                            swiftPackage(
+                                url = url(mapsRepo.url),
+                                version = exact("1.0.0"),
+                                products = listOf(product(mapsRepo.name))
+                            )
+                        }
+                    }
+                }
+                include(kmpMapsProject, "kmpMapsProject")
+
+                val prepareFingerPrintIphoneos = lowerCamelCaseName(
+                    PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME,
+                    "iphonesimulator"
+                )
+
+                build(
+                    ":$prepareFingerPrintIphoneos",
+                    ":kmpMapsProject:$prepareFingerPrintIphoneos",
+                ) {
+
+                    assertNotEquals(
+                        kmpMapsProject.projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator")
+                            .readText()
+                            .trim(),
+                        projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator")
+                            .readText()
+                            .trim(),
+                        "Projects with different dependencies and build settings should have different fingerprint"
+
+                    )
+                }
+
+                build(
+                    ":$prepareFingerPrintIphoneos", "-P${useMapsRepo}=true",
+                    ":kmpMapsProject:$prepareFingerPrintIphoneos"
+                ) {
+                    assertEquals(
+                        kmpMapsProject.projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator")
+                            .readText()
+                            .trim(),
+                        projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator")
+                            .readText()
+                            .trim(),
+                        "Projects with same dependencies and build settings should have same fingerprint"
+
+                    )
+                }
+
+                build(
+                    ":$prepareFingerPrintIphoneos", "-P${useMapsRepo}=true", "-P${useMapsDifferentVersions}=true",
+                    ":kmpMapsProject:$prepareFingerPrintIphoneos"
+                ) {
+
+                    assertNotEquals(
+                        kmpMapsProject.projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator")
+                            .readText()
+                            .trim(),
+                        projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator")
+                            .readText()
+                            .trim(),
+                        "Projects with different dependencies and build settings should have different fingerprint"
+                    )
+                }
             }
         }
     }

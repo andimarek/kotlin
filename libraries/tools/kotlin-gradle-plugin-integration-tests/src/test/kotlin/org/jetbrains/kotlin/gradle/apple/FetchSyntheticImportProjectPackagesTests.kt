@@ -37,9 +37,12 @@ import org.jetbrains.kotlin.gradle.testbase.build
 import org.jetbrains.kotlin.gradle.testbase.buildScriptInjection
 import org.jetbrains.kotlin.gradle.testbase.plugins
 import org.jetbrains.kotlin.gradle.testbase.project
+import org.jetbrains.kotlin.gradle.uklibs.include
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.junit.jupiter.api.condition.OS
 import kotlin.io.path.deleteRecursively
+import kotlin.io.path.readText
+import kotlin.test.assertEquals
 
 @OsCondition(
     supportedOn = [OS.MAC],
@@ -157,4 +160,94 @@ class FetchSyntheticImportProjectPackagesTests : KGPBaseTest() {
             }
         }
     }
+
+    @GradleTestVersions(minVersion = TestVersions.Gradle.G_8_0)
+    @GradleTest
+    fun `fetch tasks with various fingerprints uses correct checkout directories`(version: GradleVersion) {
+        val useMapsRepo = "useMaps"
+        val useMapsDifferentVersions = "useMapsDifferentVersions"
+
+        project("empty", version) {
+            withLockFileFixture {
+                val mapsRepo = repoRef("Maps").also { createRepo(it.name, listOf("1.0.0", "1.0.1")) }
+                val crpytoRepo = repoRef("Crypto").also { createRepo(it.name, listOf("1.0.0")) }
+
+                initSwiftPmProject(cacheDirFile) {
+                    if (project.hasProperty(useMapsRepo)) {
+                        val version = if (project.hasProperty(useMapsDifferentVersions)) {
+                            "1.0.1"
+                        } else {
+                            "1.0.0"
+                        }
+
+                        swiftPMDependencies {
+                            swiftPackage(
+                                url = url(mapsRepo.url),
+                                version = exact(version),
+                                products = listOf(product(mapsRepo.name))
+                            )
+                        }
+                    } else {
+                        swiftPMDependencies {
+                            swiftPackage(
+                                url = url(crpytoRepo.url),
+                                version = exact("1.0.0"),
+                                products = listOf(product(crpytoRepo.name))
+                            )
+                        }
+                    }
+                }
+
+                val kmpMapsProject = project("empty", version) {
+                    initSwiftPmProject(cacheDirFile) {
+                        swiftPMDependencies {
+                            swiftPackage(
+                                url = url(mapsRepo.url),
+                                version = exact("1.0.0"),
+                                products = listOf(product(mapsRepo.name))
+                            )
+                        }
+                    }
+                }
+                include(kmpMapsProject, "kmpMapsProject")
+
+                val kmpMapsConsumer = project("empty", gradleVersion) {
+                    initSwiftPmProject(cacheDirFile) {
+                        sourceSets.getByName("iosArm64Main").dependencies {
+                            implementation(project(":kmpMapsProject"))
+                        }
+                    }
+                }
+                include(kmpMapsConsumer, "kmpMapsConsumer")
+
+
+                build(
+                    ":${FetchSyntheticImportProjectPackages.TASK_NAME}",
+                    ":kmpMapsConsumer:${FetchSyntheticImportProjectPackages.TASK_NAME}"
+                ) {
+                    assertFileExists(
+                        projectPath.resolve("build/kotlin/swiftImport/Package.resolved")
+                    )
+                    assertFileExists(
+                        projectPath.resolve("build/kotlin/swiftPMCheckout/workspace-state.json")
+                    )
+
+                    val kmpConsumerHash = kmpMapsConsumer.projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator").readText().trim()
+                    val rootHash = kmpMapsConsumer.projectPath.resolve("build/kotlin/swiftPMXcodeBuildExecutionHashes/iphonesimulator").readText().trim()
+
+
+                    assertFileExists(
+                        kmpMapsConsumer.projectPath.resolve("build/kotlin/swiftImport/Package.resolved")
+                    )
+                    assertFileExists(
+                        kmpMapsConsumer.projectPath.resolve("build/kotlin/swiftPMCheckout/workspace-state.json")
+                    )
+                }
+
+
+            }
+
+        }
+    }
+
 }

@@ -52,10 +52,6 @@ internal abstract class SyncPackageResolvedTask : DefaultTask() {
             return
         }
 
-        if (hasSameContent(src, dest)) return
-
-        if (!dest.parentFile.exists()) dest.parentFile.mkdirs()
-
         copySwiftLockFile(fs, src, dest)
     }
 
@@ -67,11 +63,15 @@ internal abstract class SyncPackageResolvedTask : DefaultTask() {
 }
 
 
-private fun copySwiftLockFile(
+internal fun copySwiftLockFile(
     fs: FileSystemOperations,
     src: File,
     dest: File,
 ) {
+    if (hasSameContent(src, dest)) return
+
+    if (!dest.parentFile.exists()) dest.parentFile.mkdirs()
+
     fs.copy { spec ->
         spec.from(src)
         spec.into(dest.parentFile)

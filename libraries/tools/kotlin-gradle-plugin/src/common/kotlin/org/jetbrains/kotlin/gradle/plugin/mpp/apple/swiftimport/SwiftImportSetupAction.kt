@@ -287,19 +287,50 @@ internal val SwiftImportSetupAction = KotlinProjectSetupAction {
             provideXcodeDumpsDir()
         )
 
-        val xcodbuildDumpTaskName = lowerCamelCaseName(
+        val prepareFingerprintTask = project.locateOrRegisterTask<PrepareXcodeBuildArgsDumpFingerprint>(
+            lowerCamelCaseName(
+                PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME,
+                targetSdk,
+            )
+        ) { fingerprintTask ->
+            fingerprintTask.onlyIf("SwiftPM import doesn't support non macOS hosts") { isMacOSHost }
+
+            fingerprintTask.packageResolvedSynchronization.set(swiftPMImportExtension.packageResolvedSynchronization.toDumpTaskFingerprint())
+            fingerprintTask.directSwiftPMDependencies.set(swiftPMImportExtension.swiftPMDependencies)
+            fingerprintTask.normalizedTransitiveSwiftPMDependenciesInput.set(
+                transitiveSwiftPMDependenciesProvider.map { it.toNormalizedDumpTaskFingerprintInput() }
+            )
+            // These settings are not passed as xcodebuild command-line arguments, but they are written into the generated
+            // synthetic Package.swift. Changing them can change target triples and the clang/linker args captured from
+            // xcodebuild, so they must participate in the shared dump fingerprint.
+            fingerprintTask.buildSettingsFingerprint.set(swiftPMImportExtension.dumpTaskBuildSettingsFingerprint())
+            fingerprintTask.filesToTrackFromLocalPackages.set(computeLocalPackageDependencyInputFiles.flatMap { it.filesToTrackFromLocalPackages })
+            fingerprintTask.xcodebuildSdk.set(targetSdk)
+            fingerprintTask.architectures.add(target.konanTarget.appleArchitecture)
+        }
+
+        // this is set more than once, but okay
+        fetchSyntheticImportProjectPackages.configure { fetchTask ->
+            fetchTask.xcodebuildExecutionHashFiles.from(
+                prepareFingerprintTask.map { it.xcodebuildExecutionHashFile.get() }
+            )
+            fetchTask.usesService(xcodeDumpBuildService)
+            fetchTask.coordinationService.set(xcodeDumpBuildService)
+        }
+
+
+        val xcodebuildDumpTaskName = lowerCamelCaseName(
             DumpXcodeBuildArgs.TASK_NAME,
             targetSdk,
         )
         val xcodebuildDumpTask = registerDumpXcodebuildArgsTask(
             xcodeDumpBuildService = xcodeDumpBuildService,
-            taskName = xcodbuildDumpTaskName,
+            taskName = xcodebuildDumpTaskName,
             computeLocalPackageDependencyInputFiles = computeLocalPackageDependencyInputFiles,
             fetchSyntheticImportProjectPackages = fetchSyntheticImportProjectPackages,
             syntheticImportProjectGenerationTaskForCinteropsAndLdDump = syntheticImportProjectGenerationTaskForCinteropsAndLdDump,
             hasDirectOrTransitiveSwiftPMDependencies = hasDirectOrTransitiveSwiftPMDependencies,
-            swiftPMImportExtension = swiftPMImportExtension,
-            transitiveSwiftPMDependenciesProvider = transitiveSwiftPMDependenciesProvider,
+            prepareFingerprintTask = prepareFingerprintTask,
             targetSdk = targetSdk,
             targetPlatform = targetPlatform,
             architecture = target.konanTarget.appleArchitecture,
@@ -528,6 +559,7 @@ private fun Project.locateOrRegisterUmbrellaFetchTask(
         it.onlyIf { aggregatedTransitiveDependencies.get().metadataByDependencyIdentifier.values.any { it.dependencies.isNotEmpty() } }
         it.swiftPMDependenciesCheckout.set(checkOutDir)
         it.gitIgnoreCheckoutDir.set(true)
+        it.coordinationDisabled.set(true)
     }
 
     return actualFetchClaimer
@@ -753,35 +785,12 @@ private fun Project.registerDumpXcodebuildArgsTask(
     fetchSyntheticImportProjectPackages: TaskProvider<FetchSyntheticImportProjectPackages>,
     syntheticImportProjectGenerationTaskForCinteropsAndLdDump: TaskProvider<GenerateSyntheticLinkageImportProject>,
     hasDirectOrTransitiveSwiftPMDependencies: Provider<Boolean>,
-    swiftPMImportExtension: SwiftPMImportExtension,
-    transitiveSwiftPMDependenciesProvider: Provider<TransitiveSwiftPMDependencies>,
+    prepareFingerprintTask: TaskProvider<PrepareXcodeBuildArgsDumpFingerprint>,
     targetSdk: String,
     targetPlatform: String,
     architecture: AppleArchitecture,
     isMacOSHost: Boolean,
 ): TaskProvider<DumpXcodeBuildArgs> {
-    val prepareFingerprintTask = project.locateOrRegisterTask<PrepareXcodeBuildArgsDumpFingerprint>(
-        lowerCamelCaseName(
-            PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME,
-            targetSdk,
-        )
-    ) { fingerprintTask ->
-        fingerprintTask.onlyIf("SwiftPM import doesn't support non macOS hosts") { isMacOSHost }
-
-        fingerprintTask.packageResolvedSynchronization.set(swiftPMImportExtension.packageResolvedSynchronization.toDumpTaskFingerprint())
-        fingerprintTask.directSwiftPMDependencies.set(swiftPMImportExtension.swiftPMDependencies)
-        fingerprintTask.normalizedTransitiveSwiftPMDependenciesInput.set(
-            transitiveSwiftPMDependenciesProvider.map { it.toNormalizedDumpTaskFingerprintInput() }
-        )
-        // These settings are not passed as xcodebuild command-line arguments, but they are written into the generated
-        // synthetic Package.swift. Changing them can change target triples and the clang/linker args captured from
-        // xcodebuild, so they must participate in the shared dump fingerprint.
-        fingerprintTask.buildSettingsFingerprint.set(swiftPMImportExtension.dumpTaskBuildSettingsFingerprint())
-        fingerprintTask.filesToTrackFromLocalPackages.set(computeLocalPackageDependencyInputFiles.flatMap { it.filesToTrackFromLocalPackages })
-        fingerprintTask.xcodebuildSdk.set(targetSdk)
-        fingerprintTask.architectures.add(architecture)
-    }
-
     return project.locateOrRegisterTask<DumpXcodeBuildArgs>(
         taskName
     ) { dumpTask ->

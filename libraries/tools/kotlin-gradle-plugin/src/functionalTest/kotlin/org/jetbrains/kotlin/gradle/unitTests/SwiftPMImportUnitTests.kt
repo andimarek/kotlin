@@ -1054,6 +1054,229 @@ class SwiftPMImportUnitTests {
             "Right consumer convert task should only see its own dump task in its task dependency graph"
         )
     }
+
+
+    @Test
+    fun `fetch task call triggers existing prepare xcodebuild dump fingerprint task for both targets`() {
+
+        val project = swiftPMImportProject(
+            multiplatform = {
+                iosArm64()
+                iosSimulatorArm64()
+            },
+            preApplyCode = {
+                val localPackageDir = project.projectDir.resolve("mapsPackage")
+                localPackageDir.mkdirs()
+                localPackageDir.resolve("Package.swift").writeText(
+                    """
+                    // swift-tools-version: 5.9
+                    import PackageDescription
+                    let package = Package(name: "MapsPackage")
+                    """.trimIndent()
+                )
+            },
+            swiftPMDependencies = { layout ->
+                localSwiftPackage(
+                    directory = layout.projectDirectory.dir("mapsPackage"),
+                    products = listOf("MapsPackage"),
+                    packageName = "MapsPackage",
+                )
+            }
+
+        ).evaluate()
+
+
+        val iphoneSimulatorFingerprintTask = project.tasks.findByName(
+            lowerCamelCaseName(PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME, "iphonesimulator"),
+        )
+
+        val iphoneosFingerprintTask = project.tasks.findByName(
+            lowerCamelCaseName(PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME, "iphoneos"),
+        )
+
+        val iphoneSimulatorDumpTask = project.tasks.findByName(
+            lowerCamelCaseName(DumpXcodeBuildArgs.TASK_NAME, "iphonesimulator")
+        )
+
+        val iphoneosDumpTask = project.tasks.findByName(
+            lowerCamelCaseName(DumpXcodeBuildArgs.TASK_NAME, "iphoneos")
+        )
+
+        val fetchTask = project.tasks.findByName(
+            "fetchSyntheticImportProjectPackages"
+        )
+
+        assertIs<FetchSyntheticImportProjectPackages>(fetchTask)
+        assertIs<PrepareXcodeBuildArgsDumpFingerprint>(iphoneSimulatorFingerprintTask)
+        assertIs<PrepareXcodeBuildArgsDumpFingerprint>(iphoneosFingerprintTask)
+
+        assertIs<DumpXcodeBuildArgs>(iphoneosDumpTask)
+        assertIs<DumpXcodeBuildArgs>(iphoneSimulatorDumpTask)
+
+        fetchTask.assertDependsOn(
+            iphoneSimulatorFingerprintTask,
+        )
+
+        fetchTask.assertDependsOn(
+            iphoneosFingerprintTask,
+        )
+
+        assertEquals(
+            iphoneosFingerprintTask.xcodebuildExecutionHashFile.get().asFile,
+            iphoneosDumpTask.xcodebuildExecutionHashFile.get().asFile,
+            "Fingerprint hash and dump task for iphoneos should match"
+        )
+
+        assertEquals(
+            iphoneSimulatorFingerprintTask.xcodebuildExecutionHashFile.get().asFile,
+            iphoneSimulatorDumpTask.xcodebuildExecutionHashFile.get().asFile,
+            "Fingerprint hash and dump task for iphonesimulator should match"
+        )
+    }
+
+
+    @Test
+    fun `projects with same fingerprint uses same dump dir in def file conversion`() {
+
+        val rootProject = buildProject { configureRepositoriesForTests() }
+
+        swiftPMImportProject(
+            projectBuilder = {
+                withParent(rootProject)
+                withName("kmp-maps")
+            },
+            preApplyCode = {
+                val localPackageDir = project.projectDir.resolve("mapsPackage")
+                localPackageDir.mkdirs()
+                localPackageDir.resolve("Package.swift").writeText(
+                    """
+                    // swift-tools-version: 5.9
+                    import PackageDescription
+                    let package = Package(name: "MapsPackage")
+                    """.trimIndent()
+                )
+            },
+            swiftPMDependencies = { layout ->
+                localSwiftPackage(
+                    directory = layout.projectDirectory.dir("mapsPackage"),
+                    products = listOf("MapsPackage"),
+                    packageName = "MapsPackage",
+                )
+            }
+        )
+
+        val leftProject = swiftPMImportProject(
+            projectBuilder = {
+                withParent(rootProject)
+                withName("left")
+            },
+            multiplatform = {
+                iosSimulatorArm64()
+                sourceSets.getByName("iosSimulatorArm64Main").dependencies {
+                    implementation(project(":kmp-maps"))
+                }
+            }
+        )
+
+        val rightProject = swiftPMImportProject(
+            projectBuilder = {
+                withParent(rootProject)
+                withName("right")
+            },
+            multiplatform = {
+                iosSimulatorArm64()
+                sourceSets.getByName("iosSimulatorArm64Main").dependencies {
+                    implementation(project(":kmp-maps"))
+                }
+            }
+        )
+
+        rightProject.evaluate()
+        leftProject.evaluate()
+
+        val rightProjectFingerprintTask = rightProject.tasks.findByName(
+            lowerCamelCaseName(PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME, "iphonesimulator"),
+        )
+
+        val leftProjectFingerprintTask = leftProject.tasks.findByName(
+            lowerCamelCaseName(PrepareXcodeBuildArgsDumpFingerprint.TASK_NAME, "iphonesimulator"),
+        )
+
+        assertIs<PrepareXcodeBuildArgsDumpFingerprint>(rightProjectFingerprintTask)
+        assertIs<PrepareXcodeBuildArgsDumpFingerprint>(leftProjectFingerprintTask)
+
+
+        val rightProjectLocalFetchTask = rightProject.tasks.findByName(
+            FetchSyntheticImportProjectPackages.TASK_NAME
+        )
+
+        val leftProjectLocalFetchTask = leftProject.tasks.findByName(
+            FetchSyntheticImportProjectPackages.TASK_NAME
+        )
+
+        assertIs<FetchSyntheticImportProjectPackages>(rightProjectLocalFetchTask)
+        assertIs<FetchSyntheticImportProjectPackages>(leftProjectLocalFetchTask)
+
+        val rightProjectXcodeDumpTask = rightProject.tasks.findByName(
+            lowerCamelCaseName(
+                DumpXcodeBuildArgs.TASK_NAME,
+                "iphonesimulator",
+            )
+        )
+
+        val leftProjectXcodeDumpTask = leftProject.tasks.findByName(
+            lowerCamelCaseName(
+                DumpXcodeBuildArgs.TASK_NAME,
+                "iphonesimulator",
+            )
+        )
+
+        assertIs<DumpXcodeBuildArgs>(rightProjectXcodeDumpTask)
+        assertIs<DumpXcodeBuildArgs>(leftProjectXcodeDumpTask)
+
+
+        val rightProjectConvertTask = rightProject.tasks.findByName(
+            lowerCamelCaseName(
+                ConvertSyntheticSwiftPMImportProjectIntoDefFile.TASK_NAME,
+                "iphonesimulator",
+            )
+        )
+
+        val leftProjectConvertTask = leftProject.tasks.findByName(
+            lowerCamelCaseName(
+                ConvertSyntheticSwiftPMImportProjectIntoDefFile.TASK_NAME,
+                "iphonesimulator",
+            )
+        )
+
+        assertIs<ConvertSyntheticSwiftPMImportProjectIntoDefFile>(rightProjectConvertTask)
+        assertIs<ConvertSyntheticSwiftPMImportProjectIntoDefFile>(leftProjectConvertTask)
+
+
+        assertEquals(
+            rightProjectFingerprintTask.xcodebuildExecutionHashFile.get().asFile,
+            rightProjectLocalFetchTask.xcodebuildExecutionHashFiles.files.first(),
+            "Right project local fetch task depends on right fingerprint"
+        )
+
+        assertEquals(
+            rightProjectLocalFetchTask.xcodebuildExecutionHashFiles.files.first(),
+            rightProjectConvertTask.xcodebuildExecutionHashFile.get().asFile,
+            "Right project convert task and local fetch task should use same xcodebuild hash file"
+        )
+
+        assertEquals(
+            rightProjectXcodeDumpTask.swiftPMDependenciesCheckout.get().asFile,
+            rightProjectLocalFetchTask.swiftPMDependenciesCheckout.get().asFile,
+            "Right project dump task should use checkout dir of fetch task"
+        )
+
+        assertEquals(
+            rightProjectConvertTask.xcodeDumpsDir.get().asFile,
+            leftProjectConvertTask.xcodeDumpsDir.get().asFile,
+            "Left and right with same fingerprint, their convert tasks should use same dump dir"
+        )
+    }
 }
 
 private fun ProjectInternal.swiftPmLocalDependencies(): List<SwiftPMDependency.Local> {
