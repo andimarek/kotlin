@@ -1,17 +1,19 @@
 // LANGUAGE: +CompanionBlocksAndExtensions
 
+fun <T> execute(f: () -> T): T = f()
+
 var initOrder = ""
 
 class C {
     companion {
-        val blockProp1: String = run {
+        val blockProp1: String = execute {
             initOrder += "B1"
             "block1"
         }
     }
 
     companion object {
-        val objectProp: String = run {
+        val objectProp: String = execute {
             initOrder += "O"
             "object"
         }
@@ -20,7 +22,7 @@ class C {
     }
 
     companion {
-        val blockProp2: String = run {
+        val blockProp2: String = execute {
             initOrder += "B2"
             "block2"
         }

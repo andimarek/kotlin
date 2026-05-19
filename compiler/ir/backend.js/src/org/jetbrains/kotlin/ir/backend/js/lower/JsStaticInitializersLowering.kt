@@ -6,6 +6,8 @@
 package org.jetbrains.kotlin.ir.backend.js.lower
 
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
+import org.jetbrains.kotlin.backend.common.lower.InitializersLowering
+import org.jetbrains.kotlin.backend.common.lower.InitializersLoweringBase
 import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.backend.common.lower.irBlockBody
 import org.jetbrains.kotlin.backend.common.lower.irIfThen
@@ -16,6 +18,7 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder
 import org.jetbrains.kotlin.ir.backend.js.lower.JsStaticInitializersLowering.Companion.STATIC_FIELD_INITIALIZER
+import org.jetbrains.kotlin.ir.backend.js.objectGetInstanceFunction
 import org.jetbrains.kotlin.ir.backend.js.staticInitializer
 import org.jetbrains.kotlin.ir.backend.js.utils.primaryConstructorReplacement
 import org.jetbrains.kotlin.ir.builders.declarations.buildField
@@ -23,6 +26,7 @@ import org.jetbrains.kotlin.ir.builders.declarations.buildFun
 import org.jetbrains.kotlin.ir.builders.irBoolean
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGetField
+import org.jetbrains.kotlin.ir.builders.irGetObjectValue
 import org.jetbrains.kotlin.ir.builders.irReturnUnit
 import org.jetbrains.kotlin.ir.builders.irSetField
 import org.jetbrains.kotlin.ir.declarations.*
@@ -37,8 +41,12 @@ import org.jetbrains.kotlin.name.Name
 /**
  * Moves initializers of static members of the class coming from companion blocks into a static initializer function.
  */
-@PhasePrerequisites(ObjectDeclarationLowering::class, JsInitializersLowering::class)
-internal class JsStaticInitializersLowering(val context: JsIrBackendContext) : FileLoweringPass {
+@PhasePrerequisites(
+    ObjectDeclarationLowering::class,
+    JsInitializersLowering::class,
+    JsInitializersCleanupLowering::class
+)
+internal class JsStaticInitializersLowering(private val context: JsIrBackendContext) : FileLoweringPass {
     companion object {
         val STATIC_FIELD_INITIALIZER by IrStatementOriginImpl
         val STATIC_CLASS_INITIALIZER by IrDeclarationOriginImpl.Synthetic
@@ -76,72 +84,39 @@ internal class JsStaticInitializersLowering(val context: JsIrBackendContext) : F
 
     private fun processDeclarationContainer(container: IrClass) {
         val builder = context.irBuiltIns.createIrBuilder(container.symbol, SYNTHETIC_OFFSET, SYNTHETIC_OFFSET)
-        val staticFieldsWithInitializers =
-            (container.declarations.filter { it is IrField && it.isStatic } + container.declarations
-                .filterIsInstance<IrProperty>()
-                .mapNotNull { it.backingField }
-                .filter { it.isStatic })
-            .toHashSet()
+        val staticDeclarationsByFields = buildMap {
+            for (declaration in container.declarations) {
+                val field = declaration as? IrField ?: (declaration as? IrProperty)?.backingField ?: continue
+                if (!field.isStatic) continue
+                val initializer = field.initializer?.expression ?: continue
+                /**
+                 * Optimization: initialize in place constantly to avoid runtime checks if possible.
+                 * To do it, we need to know the initializer in compile time
+                 */
+                if (initializer.isConst()) continue
+                put(declaration, field to initializer)
+            }
+        }
 
         val initializers = buildList {
             for (declaration in container.declarations) {
-                if (declaration in staticFieldsWithInitializers)
-                {
-                    add(
-                        builder.irSetField(
-                            receiver = null,
-                            field = declaration,
-                            value = initializerBody,
-                            origin = STATIC_FIELD_INITIALIZER
-                        )
-                    )
-                    declaration.initializer = null
-                }
-
-
-
-
-
                 when (declaration) {
-                    is IrField if declaration.isStatic -> {
-                        /**
-                         * Optimization: initialize in place constantly to avoid runtime checks if possible.
-                         * To do it, we need to know the initializer in compile time
-                         */
-//                        if (initializer?.isConst() == true) {
-//                            continue
-//                        }
-                        val initializerBody = declaration.initializer?.expression ?: continue
-                        add(
-                            builder.irSetField(
-                                receiver = null,
-                                field = declaration,
-                                value = initializerBody,
-                                origin = STATIC_FIELD_INITIALIZER
+                    in staticDeclarationsByFields -> {
+                        staticDeclarationsByFields[declaration]?.let { (field, initializer) ->
+                            add(
+                                builder.irSetField(
+                                    receiver = null,
+                                    field = field,
+                                    value = initializer,
+                                    origin = STATIC_FIELD_INITIALIZER
+                                )
                             )
-                        )
-                        declaration.initializer = null
+                            field.initializer = null
+                        }
                     }
-                    is IrProperty if declaration.backingField?.isStatic == true -> {
-                        val field = declaration.backingField ?: continue
-                        val initializerBody = field.initializer?.expression ?: continue
-                        add(
-                            builder.irSetField(
-                                receiver = null,
-                                field = field,
-                                value = initializerBody,
-                                origin = STATIC_FIELD_INITIALIZER
-                            )
-                        )
-                        field.initializer = null
+                    is IrClass if declaration.isCompanion && staticDeclarationsByFields.isNotEmpty() -> {
+                        add(builder.irGetObjectValue(declaration.defaultType, declaration.symbol))
                     }
-                    is IrClass if declaration.isCompanion -> {
-                        val constructor = declaration.primaryConstructorReplacement ?: declaration.primaryConstructor ?: continue
-                        val body = constructor.body as? IrBlockBody ?: continue
-                        addAll(body.statements)
-                        body.statements.clear()
-                    }
-                    else -> continue
                 }
             }
         }

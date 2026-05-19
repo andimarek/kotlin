@@ -21,4 +21,12 @@ import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 internal class JsInitializersLowering(context: JsIrBackendContext) : InitializersLowering(context)
 
 @PhasePrerequisites(JsInitializersLowering::class)
-internal class JsInitializersCleanupLowering(context: CommonBackendContext) : InitializersCleanupLowering(context)
+internal class JsInitializersCleanupLowering(context: CommonBackendContext) : InitializersCleanupLowering(
+    context,
+    {
+        // Static initializers for non-const fields are moved to static init function by JsStaticInitializersLowering.
+        // However, constant fields initializers remain due to optimization purposes, so we need to keep them from vanishing
+        // performed for other field initializers by InitializersCleanupLowering.
+        !it.isStatic || it.correspondingPropertySymbol?.owner?.isConst != true
+    }
+)
