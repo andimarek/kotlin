@@ -67,7 +67,7 @@ class AbiValidationBuildToolsJvmTests : BaseCompilationTest() {
     @Test
     @DisplayName("Smoke test of ABI validation filters: every filter form in one run")
     @TestMetadata("jvm-module-abi-filters")
-    fun testAllFilterForms() {
+    fun testJvmDumpAllFilters() {
         val toolchain = KotlinToolchains.loadImplementation(btaClassloader)
         jvmProject(toolchain, toolchain.createInProcessExecutionPolicy()) {
             val module = module("jvm-module-abi-filters")
@@ -86,10 +86,10 @@ class AbiValidationBuildToolsJvmTests : BaseCompilationTest() {
                         "org.example.util.**",
                     )
                     this[AbiFilters.EXCLUDE_NAMED] = setOf(
-                        "org.example.internal.BuildConfig",
                         "org.example.impl.**",
                         "org.example.*Generated*",
                         "org.example.util.Tmp?Helper",
+                        "org.example.api.*Api",
                     )
                     this[AbiFilters.INCLUDE_ANNOTATED_WITH] = setOf("org.example.api.PublicApi")
                     this[AbiFilters.EXCLUDE_ANNOTATED_WITH] = setOf("org.example.api.InternalApi")
@@ -103,16 +103,15 @@ class AbiValidationBuildToolsJvmTests : BaseCompilationTest() {
                 	public final fun greet (Ljava/lang/String;)Ljava/lang/String;
                 }
 
-                public abstract interface annotation class org/example/api/InternalApi : java/lang/annotation/Annotation {
-                }
-
-                public abstract interface annotation class org/example/api/PublicApi : java/lang/annotation/Annotation {
-                }
-
                 public final class org/example/api/PublicService {
                 	public fun <init> ()V
                 	public final fun compute (I)I
-                	public final fun version ()Ljava/lang/String;
+                }
+
+                public final class org/example/config/BuildConfig {
+                	public fun <init> ()V
+                	public final fun getBuiltAt ()J
+                	public final fun getCommitSha ()Ljava/lang/String;
                 }
 
                 public final class org/example/util/TmpABHelper {

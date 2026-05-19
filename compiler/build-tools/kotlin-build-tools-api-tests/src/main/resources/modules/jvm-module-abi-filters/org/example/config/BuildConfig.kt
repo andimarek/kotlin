@@ -3,8 +3,11 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.example.internal
+package org.example.config
 
+import org.example.api.PublicApi
+
+@PublicApi
 class BuildConfig {
     val commitSha: String = "unknown"
     val builtAt: Long = 0L

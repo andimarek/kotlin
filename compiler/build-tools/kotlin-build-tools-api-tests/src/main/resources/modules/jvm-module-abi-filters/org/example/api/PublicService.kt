@@ -6,6 +6,7 @@
 package org.example.api
 
 class PublicService {
+    @InternalApi
     fun version(): String = "1.0"
     fun compute(x: Int): Int = x * 2
 }
