@@ -1,3 +1,4 @@
+// IGNORE_DEXING
 // MODULE: lib
 // FILE: 1.kt
 
