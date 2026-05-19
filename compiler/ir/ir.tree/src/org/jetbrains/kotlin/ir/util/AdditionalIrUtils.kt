@@ -132,10 +132,10 @@ private val IrAnnotation.annotationClass
     get() = this.symbol.owner.constructedClass
 
 fun IrAnnotation.isAnnotationWithEqualFqName(fqName: FqName): Boolean =
-    if (symbol.isBound) {
-        annotationClass.hasEqualFqName(fqName)
+    if (classSymbol.isBound) {
+        classSymbol.owner.hasEqualFqName(fqName)
     } else {
-        symbol.hasEqualFqName(fqName.child(SpecialNames.INIT))
+        classSymbol.hasEqualFqName(fqName)
     }
 
 val IrClass.packageFqName: FqName?
