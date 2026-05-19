@@ -747,6 +747,9 @@ object IrTree : AbstractTreeBuilder() {
 
         +referencedSymbol("classSymbol", classSymbol, mutable = false)
         +field("argumentMapping", StandardTypes.map.withArgs(type<Name>(), expression))
+        +referencedSymbol("symbol", type = constructorSymbol) {
+            optInAnnotation = irAnnotationConstructorSymbolToBeRemoved
+        }
     }
     val getSingletonValue: Element by element(Expression) {
         nameInVisitorMethod = "SingletonReference"

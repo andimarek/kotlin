@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.backend.common.actualizer
 
+import org.jetbrains.kotlin.ir.IrAnnotationConstructorSymbolToBeRemoved
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrAnnotation
@@ -219,6 +220,7 @@ internal open class ActualizerVisitor(
         }
 
     override fun visitAnnotation(expression: IrAnnotation): IrAnnotation {
+        @OptIn(IrAnnotationConstructorSymbolToBeRemoved::class)
         val constructorSymbol = symbolRemapper.getReferencedConstructor(expression.symbol)
 
         return IrAnnotationImpl(

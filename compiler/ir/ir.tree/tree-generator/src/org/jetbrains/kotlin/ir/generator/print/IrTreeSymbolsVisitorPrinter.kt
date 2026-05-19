@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.ir.generator.BASE_PACKAGE
 import org.jetbrains.kotlin.ir.generator.IrTree.functionReference
 import org.jetbrains.kotlin.ir.generator.IrTree.localDelegatedPropertyReference
 import org.jetbrains.kotlin.ir.generator.IrTree.propertyReference
+import org.jetbrains.kotlin.ir.generator.irAnnotationConstructorSymbolToBeRemoved
 import org.jetbrains.kotlin.ir.generator.model.Element
 import org.jetbrains.kotlin.ir.generator.model.Field
 import org.jetbrains.kotlin.ir.generator.model.ListField
@@ -30,6 +31,8 @@ internal class IrTreeSymbolsVisitorPrinter(
 
     override val implementationKind: ImplementationKind
         get() = ImplementationKind.AbstractClass
+
+    override val optIns: List<ClassRef<*>> = listOf(irAnnotationConstructorSymbolToBeRemoved)
 
     override fun ImportCollectingPrinter.printAdditionalMethods() {
         addImport(ArbitraryImportable("$BASE_PACKAGE.types", "classifierOrNull"))

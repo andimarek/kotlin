@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.backend.common.serialization.proto.IrSimpleTypeNulla
 import org.jetbrains.kotlin.config.KlibAbiCompatibilityLevel
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities.INTERNAL
+import org.jetbrains.kotlin.ir.IrAnnotationConstructorSymbolToBeRemoved
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrFileEntry
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -698,6 +699,7 @@ open class IrFileSerializer(
 
     private fun serializeAnnotation(annotation: IrAnnotation, parent: IrElement?): ProtoAnnotation =
         ProtoAnnotation.newBuilder().apply {
+            @OptIn(IrAnnotationConstructorSymbolToBeRemoved::class)
             symbol = serializeIrSymbol(annotation.symbol)
             constructorTypeArgumentsCount = annotation.constructorTypeArgumentsCount
             if (settings.abiCompatibilityLevel.isAtLeast(KlibAbiCompatibilityLevel.ABI_LEVEL_2_4)) {
