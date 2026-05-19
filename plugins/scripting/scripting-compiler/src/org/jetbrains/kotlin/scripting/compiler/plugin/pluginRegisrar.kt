@@ -7,6 +7,7 @@
 
 package org.jetbrains.kotlin.scripting.compiler.plugin
 
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.common.extensions.ScriptEvaluationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.registerExtension
@@ -17,7 +18,11 @@ import org.jetbrains.kotlin.fir.extensions.CollectAdditionalSourceFilesExtension
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptConfigurationsProvider
 import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptDefinitionProvider
+import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ReplLoweringExtension
+import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ScriptLoweringExtension
+import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ScriptingIrExplainGenerationExtension
 import org.jetbrains.kotlin.scripting.compiler.plugin.fir.CollectAdditionalScriptSourcesExtension
+import org.jetbrains.kotlin.scripting.configuration.ScriptingConfigurationKeys.ENABLE_SCRIPT_EXPLANATION_OPTION
 import org.jetbrains.kotlin.scripting.definitions.ScriptConfigurationsProvider
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionProvider
 import kotlin.script.experimental.host.ScriptingHostConfiguration
@@ -30,6 +35,15 @@ class ScriptingK2CompilerPluginRegistrar : CompilerPluginRegistrar() {
         fun registerComponents(extensionStorage: ExtensionStorage, compilerConfiguration: CompilerConfiguration) = with(extensionStorage) {
             FirExtensionRegistrar.registerExtension(FirScriptingCompilerExtensionRegistrar(compilerConfiguration))
             FirExtensionRegistrar.registerExtension(FirScriptingSamWithReceiverExtensionRegistrar())
+
+            with(extensionStorage) {
+                if (compilerConfiguration.get(ENABLE_SCRIPT_EXPLANATION_OPTION, false)) {
+                    IrGenerationExtension.registerExtension(ScriptingIrExplainGenerationExtension())
+                }
+
+                IrGenerationExtension.registerExtension(ScriptLoweringExtension())
+                IrGenerationExtension.registerExtension(ReplLoweringExtension())
+            }
         }
     }
 

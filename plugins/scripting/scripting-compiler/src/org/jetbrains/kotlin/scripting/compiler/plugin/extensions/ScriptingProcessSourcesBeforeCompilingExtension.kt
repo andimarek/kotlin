@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.scripting.compiler.plugin.extensions
 
 import com.intellij.ide.highlighter.JavaFileType
-import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.backend.common.IrElementTransformerVoidWithContext
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -204,7 +203,7 @@ class KotlinScriptExpressionExplainTransformer(
 }
 
 
-class ScriptingIrExplainGenerationExtension(val project: MockProject) : IrGenerationExtension {
+class ScriptingIrExplainGenerationExtension : IrGenerationExtension {
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
         for (file in moduleFragment.files) {
