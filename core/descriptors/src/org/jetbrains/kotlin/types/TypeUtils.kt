@@ -385,3 +385,19 @@ fun isUnresolvedType(type: KotlinType): Boolean {
     }
     return type is ErrorType && type.kind.isUnresolved
 }
+
+fun getEffectiveVariance(parameterVariance: Variance, projectionKind: Variance): Variance {
+    if (parameterVariance === Variance.INVARIANT) {
+        return projectionKind
+    }
+    if (projectionKind === Variance.INVARIANT) {
+        return parameterVariance
+    }
+    if (parameterVariance === projectionKind) {
+        return parameterVariance
+    }
+
+    // In<out X> = In<*>
+    // Out<in X> = Out<*>
+    return Variance.OUT_VARIANCE
+}
