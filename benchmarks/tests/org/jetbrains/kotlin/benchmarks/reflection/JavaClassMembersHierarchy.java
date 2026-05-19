@@ -186,3 +186,5 @@ class JavaFinalLayer extends JavaConcreteLayer1 implements JavaSideLayerB {
     }
 }
 
+class JavaFinalLayerNoDeclaredMembers extends JavaConcreteLayer1 {
+}

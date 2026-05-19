@@ -6,68 +6,42 @@
 package org.jetbrains.kotlin.benchmarks.reflection
 
 import kotlinx.benchmark.Benchmark
+import kotlinx.benchmark.BenchmarkMode
+import kotlinx.benchmark.Mode
 import kotlinx.benchmark.Scope
 import kotlinx.benchmark.State
 import kotlinx.benchmark.TearDown
+import org.openjdk.jmh.annotations.Level
 import kotlin.reflect.KClass
 
 @State(Scope.Thread)
+@BenchmarkMode(Mode.SingleShotTime)
 open class KClassMembersHierarchyBenchmark {
-    private val targetClass: KClass<out JavaFinalLayer> = JavaFinalLayer::class
+    private val targetClass1: KClass<out JavaFinalLayer> = JavaFinalLayer::class
+    private val targetClass2: KClass<out JavaFinalLayerNoDeclaredMembers> = JavaFinalLayerNoDeclaredMembers::class
+    private val targetClass3: KClass<out JavaFinalLayerNoParents> = JavaFinalLayerNoParents::class
 
-    @TearDown
+    @TearDown(Level.Trial)
     fun after() {
-        println("DEBUG Own (finalOwn1): " + targetClass.members.find { it.name == "finalOwn1" }!!::class)
-        println("DEBUG Static (finalOwnStatic0):" + targetClass.members.find { it.name == "finalOwnStatic0" }!!::class)
-        println("DEBUG Base (abstractBase0): " + targetClass.members.find { it.name == "abstractBase0" }!!::class)
-        println("DEBUG Gen (equals):" + targetClass.members.find { it.name == "equals" }!!::class)
+        println("DEBUG Own (finalOwn1): " + targetClass1.members.find { it.name == "finalOwn1" }!!::class)
+        println("DEBUG Static (finalOwnStatic0):" + targetClass1.members.find { it.name == "finalOwnStatic0" }!!::class)
+        println("DEBUG Base (abstractBase0): " + targetClass1.members.find { it.name == "abstractBase0" }!!::class)
+        println("DEBUG Gen (equals):" + targetClass1.members.find { it.name == "equals" }!!::class)
     }
 
     @Benchmark
-    open fun membersToString0(): String {
-        return targetClass.members.joinToString { it.toString() }
+    open fun hierarchy(): String {
+        return targetClass1.members.joinToString { it.toString() }
     }
 
     @Benchmark
-    open fun membersToString1(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-    @Benchmark
-    open fun membersToString2(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-    @Benchmark
-    open fun membersToString3(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-    @Benchmark
-    open fun membersToString4(): String {
-        return targetClass.members.joinToString { it.toString() }
+    open fun noDeclaredMembers(): String {
+        return targetClass2.members.joinToString { it.toString() }
     }
 
     @Benchmark
-    open fun membersToString5(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-
-    @Benchmark
-    open fun membersToString6(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-
-    @Benchmark
-    open fun membersToString7(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-
-    @Benchmark
-    open fun membersToString8(): String {
-        return targetClass.members.joinToString { it.toString() }
-    }
-
-    @Benchmark
-    open fun membersToString9(): String {
-        return targetClass.members.joinToString { it.toString() }
+    open fun noParents(): String {
+        return targetClass3.members.joinToString { it.toString() }
     }
 
 }

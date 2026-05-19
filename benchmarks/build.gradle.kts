@@ -47,14 +47,21 @@ benchmark {
             iterationTimeUnit = "sec" // Required param
 
             warmups = warmupsParam?.toInt() ?: 0
-            iterations = iterationsParam?.toInt() ?: 3
-
-//            if (includePattern != null) {
-//                include(includePattern)
-//            } else {
+            iterations = iterationsParam?.toInt() ?: 5
+            advanced("jvmForks", 5)
             include(reflectionInclude)
-//            }
+            if (sizeParam != null) {
+                param("size", sizeParam.toInt())
+            }
+        }
+        register("reflectionK1") {
+            iterationTime = 1 // Required param
+            iterationTimeUnit = "sec" // Required param
 
+            warmups = warmupsParam?.toInt() ?: 0
+            iterations = iterationsParam?.toInt() ?: 1
+            advanced("jvmForks", 5)
+            include(reflectionInclude)
             if (sizeParam != null) {
                 param("size", sizeParam.toInt())
             }
@@ -91,7 +98,10 @@ tasks.withType<JavaExec>().matching { it.name == "testBenchmark" }.configureEach
 tasks.withType<JavaExec>().matching { it.name == "testReflectionBenchmark" }.configureEach {
     systemProperty("kotlin.reflect.jvm.useK1Implementation", "false")
     systemProperty("kotlin.reflect.jvm.newFakeOverridesImplementation", "true")
+}
 
+tasks.withType<JavaExec>().matching { it.name == "testReflectionK1Benchmark" }.configureEach {
+    systemProperty("kotlin.reflect.jvm.useK1Implementation", "true")
 }
 
 tasks.withType<JmhBytecodeGeneratorTask>().configureEach {
