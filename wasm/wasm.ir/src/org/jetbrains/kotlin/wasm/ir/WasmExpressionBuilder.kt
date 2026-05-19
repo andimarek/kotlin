@@ -142,8 +142,8 @@ open class WasmExpressionBuilder(
     }
 
     @Suppress("UNUSED_PARAMETER")
-    inline fun buildResumeBlockFunctionTypedBlock(label: String?, body: (Int) -> Unit) {
-        buildInstr(WasmOp.BLOCK, SourceLocation.NoLocation("BLOCK"), WasmImmediate.BlockType.ResumeBlockFunctionType())
+    inline fun buildContSuspendHandlerBlock(label: String?, body: (Int) -> Unit) {
+        buildInstr(WasmOp.BLOCK, SourceLocation.NoLocation("BLOCK"), WasmImmediate.BlockType.ContSuspendHandlerBlockType())
         body(numberOfNestedBlocks)
         buildEnd()
     }
