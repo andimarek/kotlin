@@ -1799,6 +1799,12 @@ sealed interface KaFirDiagnostic<PSI : PsiElement> : KaDiagnosticWithPsi<PSI> {
         val isMismatchDueToNullability: Boolean
     }
 
+    interface ExpectedParameterTypeMismatch : KaFirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ExpectedParameterTypeMismatch::class
+        val actualType: KaType
+        val expectedType: KaType
+    }
+
     interface InitializerTypeMismatch : KaFirDiagnostic<KtNamedDeclaration> {
         override val diagnosticClass get() = InitializerTypeMismatch::class
         val expectedType: KaType
