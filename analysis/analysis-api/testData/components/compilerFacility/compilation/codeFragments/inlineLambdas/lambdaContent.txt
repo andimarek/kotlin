@@ -7,7 +7,7 @@ final class CodeFragment$run$1$complexLambda$1$prop$1$l$1 extends kotlin/jvm/int
   // compiled from: fragment.kt
   OUTERCLASS CodeFragment$run$1$complexLambda$1$prop$1 invoke ()Ljava/lang/Integer;
 
-  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=48, d1={"\u0000\n\n\u0000\n\u0002\u0010\u0008\n\u0002\u0008\u0002\u0010\u0000\u001a\u00020\u0001H\n\u00a2\u0006\u0004\u0008\u0002\u0010\u0003"}, d2={"<anonymous>", "", "invoke", "()Ljava/lang/Integer;"})
+  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=1328, d1={"\u0000\n\n\u0000\n\u0002\u0010\u0008\n\u0002\u0008\u0002\u0010\u0000\u001a\u00020\u0001H\n\u00a2\u0006\u0004\u0008\u0002\u0010\u0003"}, d2={"<anonymous>", "", "invoke", "()Ljava/lang/Integer;"})
   // access flags 0x19
   public final static INNERCLASS CodeFragment$run$1$complexLambda$1 null null
   // access flags 0x18
@@ -75,7 +75,7 @@ final class CodeFragment$run$1$complexLambda$1$prop$1 extends kotlin/jvm/interna
   // compiled from: fragment.kt
   OUTERCLASS CodeFragment$run$1$complexLambda$1 <init> ()V
 
-  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=48, d1={"\u0000\n\n\u0000\n\u0002\u0010\u0008\n\u0002\u0008\u0002\u0010\u0000\u001a\u00020\u0001H\n\u00a2\u0006\u0004\u0008\u0002\u0010\u0003"}, d2={"<anonymous>", "", "invoke", "()Ljava/lang/Integer;"})
+  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=1328, d1={"\u0000\n\n\u0000\n\u0002\u0010\u0008\n\u0002\u0008\u0002\u0010\u0000\u001a\u00020\u0001H\n\u00a2\u0006\u0004\u0008\u0002\u0010\u0003"}, d2={"<anonymous>", "", "invoke", "()Ljava/lang/Integer;"})
   // access flags 0x19
   public final static INNERCLASS CodeFragment$run$1$complexLambda$1 null null
   // access flags 0x18
@@ -310,7 +310,7 @@ final class CodeFragment$run$1$createFunWithLocalObj$1 extends kotlin/jvm/intern
   // compiled from: fragment.kt
   OUTERCLASS CodeFragment run$createFunWithLocalObj ()Lkotlin/jvm/functions/Function0;
 
-  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=48, d1={"\u0000\n\n\u0000\n\u0002\u0010\u0008\n\u0002\u0008\u0002\u0010\u0000\u001a\u00020\u0001H\n\u00a2\u0006\u0004\u0008\u0002\u0010\u0003"}, d2={"<anonymous>", "", "invoke", "()Ljava/lang/Integer;"})
+  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=1328, d1={"\u0000\n\n\u0000\n\u0002\u0010\u0008\n\u0002\u0008\u0002\u0010\u0000\u001a\u00020\u0001H\n\u00a2\u0006\u0004\u0008\u0002\u0010\u0003"}, d2={"<anonymous>", "", "invoke", "()Ljava/lang/Integer;"})
   // access flags 0x18
   final static INNERCLASS CodeFragment$run$1$createFunWithLocalObj$1 null null
   // access flags 0x19
@@ -420,7 +420,7 @@ public final class CodeFragment {
 
   // compiled from: fragment.kt
 
-  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=48)
+  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=816)
   // access flags 0x18
   final static INNERCLASS CodeFragment$run$1$createFunWithLocalObj$1 null null
   // access flags 0x19

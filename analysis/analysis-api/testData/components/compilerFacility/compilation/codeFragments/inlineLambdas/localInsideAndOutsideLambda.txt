@@ -43,7 +43,7 @@ public final class CodeFragment {
 
   // compiled from: fragment.kt
 
-  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=48)
+  @Lkotlin/Metadata;(mv={2, 4, 0}, k=3, xi=816)
   // access flags 0x19
   public final static INNERCLASS CodeFragment$run$1$X null X
 
