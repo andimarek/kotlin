@@ -340,6 +340,7 @@ internal fun getPurelyImplementedSupertype(kClass: KClassImpl<*>): KType? {
     return result.createMutableCollectionType(superClass) ?: result
 }
 
+// Based on `OperatorFunctionChecks` from the compiler.
 internal fun Method.isJavaMethodAnOperator(): Boolean {
     if (Modifier.isStatic(modifiers)) return false
     val name = Name.identifier(name)
@@ -362,6 +363,7 @@ internal fun Method.isJavaMethodAnOperator(): Boolean {
         in SIMPLE_UNARY_OPERATION_NAMES -> paramCount == 0
         INC, DEC -> declaringClass.isAssignableFrom(returnType)
         in ASSIGNMENT_OPERATIONS -> returnType == Void.TYPE && paramCount == 1 && notVararg
+        // TODO (KT-86404): support `of`.
         else -> isComponentN(name)
     }
 }

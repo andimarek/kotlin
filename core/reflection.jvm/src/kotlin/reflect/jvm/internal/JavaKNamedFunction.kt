@@ -108,8 +108,9 @@ internal class JavaKNamedFunction(
 
     override val isPrimaryConstructor: Boolean get() = false
 
-    override val overridden: Collection<ReflectKFunction>
-        get() = computeOverriddenFunctions(this)
+    override val overridden: Collection<ReflectKFunction> by lazy(PUBLICATION) {
+        computeOverriddenFunctions(this)
+    }
 
     override val allParameters: List<KParameter>
         get() = enhancedSignature?.allParameters ?: originalParameters

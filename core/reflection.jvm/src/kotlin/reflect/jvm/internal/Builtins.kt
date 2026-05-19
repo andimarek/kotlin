@@ -36,9 +36,9 @@ internal fun createCloneableKmClass(): KmClass = KmClass().apply {
     visibility = Visibility.PUBLIC
 
     functions.add(KmFunction("clone").apply {
+        modality = Modality.OPEN
+        visibility = Visibility.PROTECTED
         returnType = KmType().apply {
-            modality = Modality.OPEN
-            visibility = Visibility.PROTECTED
             classifier = KmClassifier.Class("kotlin/Any")
         }
     })
