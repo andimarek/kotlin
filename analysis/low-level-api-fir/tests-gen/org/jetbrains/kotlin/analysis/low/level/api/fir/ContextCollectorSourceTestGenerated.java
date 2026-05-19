@@ -966,6 +966,12 @@ public class ContextCollectorSourceTestGenerated extends AbstractContextCollecto
     }
 
     @Test
+    @TestMetadata("companionBlockLevel.kt")
+    public void testCompanionBlockLevel() {
+      run("companionBlockLevel.kt");
+    }
+
+    @Test
     @TestMetadata("danglingContextParameterInClass.kt")
     public void testDanglingContextParameterInClass() {
       run("danglingContextParameterInClass.kt");
