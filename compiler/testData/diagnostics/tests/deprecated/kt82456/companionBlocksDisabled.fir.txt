@@ -60,7 +60,7 @@ FILE: companionBlocksDisabled.kt
         public final fun test(): R|kotlin/Unit| {
             R|/Hidden|()
             R|/Hidden2|()
-            Q|Outer.Hidden3|.R|/Outer.Hidden3.Companion.invoke<Absent or hidden companion object>#|()
+            R|/Outer.Hidden3.Hidden3<Inapplicable(INAPPLICABLE_ARGUMENTS_MAPPING_ERROR): /Outer.Hidden3.Hidden3>#|()
         }
 
     }

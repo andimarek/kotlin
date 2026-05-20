@@ -309,13 +309,6 @@ class Candidate(
     val isSuccessful: Boolean
         get() = diagnostics.allSuccessful && (!systemInitialized || !system.hasContradiction)
 
-    var implicitInvokeReceiverNoCompanionDiagnostic: ResolutionDiagnostic? = null
-        private set
-
-    fun markAsImplicitInvokeReceiverWithNoCompanionObject(diagnostic: ResolutionDiagnostic) {
-        implicitInvokeReceiverNoCompanionDiagnostic = diagnostic
-    }
-
     // ---------------------------------------- Receivers ----------------------------------------
 
     override var chosenExtensionReceiver: ConeResolutionAtom? = givenExtensionReceiver

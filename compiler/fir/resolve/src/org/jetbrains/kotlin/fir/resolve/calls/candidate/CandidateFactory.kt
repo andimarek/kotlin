@@ -150,14 +150,14 @@ class CandidateFactory private constructor(
                     )
                 }
             }
-        } else if (objectsByName) {
-            symbol.regularClassWithoutCompanionDiagnostic(context.session)?.let {
-                if (!callInfo.isImplicitInvokeReceiver) result.addDiagnostic(it)
-                else result.markAsImplicitInvokeReceiverWithNoCompanionObject(it)
-            }
+        } else if (objectsByName && symbol.isRegularClassWithoutCompanion(context.session)) {
+            if (!callInfo.isImplicitInvokeReceiver) result.addDiagnostic(NoCompanionObject)
+            else result.addDiagnostic(InvokeReceiverNoCompanionObject)
         }
-        callInfo.candidateForCommonInvokeReceiver?.implicitInvokeReceiverNoCompanionDiagnostic?.let {
-            if ((symbol as? FirCallableSymbol<*>)?.isStatic == false) result.addDiagnostic(it)
+        if (callInfo.candidateForCommonInvokeReceiver?.diagnostics?.contains(InvokeReceiverNoCompanionObject) == true) {
+            if (symbol !is FirCallableSymbol<*> || !symbol.isStatic || !companionBlocksAndExtensionsEnabled) {
+                result.addDiagnostic(InvokeOnHiddenCompanionObject)
+            }
         }
         if (callInfo.origin == FirFunctionCallOrigin.Operator) {
             val normalizedSymbol = when (symbol) {
@@ -231,16 +231,12 @@ class CandidateFactory private constructor(
         return Pair(firBasedSymbol, pluginAmbiguity)
     }
 
-    private fun FirBasedSymbol<*>.regularClassWithoutCompanionDiagnostic(session: FirSession): ResolutionDiagnostic? {
-        val referencedClass = (this as? FirClassLikeSymbol<*>)?.fullyExpandedClass(session) ?: return null
-        if (referencedClass.classKind == ClassKind.OBJECT) return null
-        val companionObject = referencedClass.resolvedCompanionObjectSymbol
-        return when {
-            companionObject == null -> NoCompanionObject
-            companionObject.isDeprecationLevelHidden(session) && LanguageFeature.SkipHiddenObjectsInResolution.isEnabled() ->
-                NoCompanionObject
-            else -> null
-        }
+    private fun FirBasedSymbol<*>.isRegularClassWithoutCompanion(session: FirSession): Boolean {
+        val referencedClass = (this as? FirClassLikeSymbol<*>)?.fullyExpandedClass(session) ?: return false
+        if (referencedClass.classKind == ClassKind.OBJECT) return false
+
+        val companionObject = referencedClass.resolvedCompanionObjectSymbol ?: return true
+        return LanguageFeature.SkipHiddenObjectsInResolution.isEnabled() && companionObject.isDeprecationLevelHidden(session)
     }
 
     private fun FirBasedSymbol<*>.unwrapIntegerOperatorSymbolIfNeeded(callInfo: CallInfo): FirBasedSymbol<*> {

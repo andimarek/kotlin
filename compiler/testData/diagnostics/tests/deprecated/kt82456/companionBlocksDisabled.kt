@@ -26,7 +26,7 @@ class Outer {
     fun test() {
         Hidden()
         Hidden2()
-        <!DEPRECATION_ERROR!>Hidden3<!>()
+        <!NO_VALUE_FOR_PARAMETER!>Hidden3<!>()
     }
 }
 

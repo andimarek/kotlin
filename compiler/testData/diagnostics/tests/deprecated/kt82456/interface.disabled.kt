@@ -8,7 +8,7 @@ class Outer {
         <!DEPRECATION_ERROR_MIGRATION_PERIOD_WARNING!>IE1<!>()
         <!DEPRECATION_ERROR!>IE2<!>()
         <!INTERFACE_AS_FUNCTION!>IH1<!>()
-        <!DEPRECATION_ERROR!>IH2<!>()
+        <!UNRESOLVED_REFERENCE!>IH2<!>()
         IH3()
         IH4()
     }
