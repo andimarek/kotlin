@@ -631,7 +631,7 @@ open class LocalDeclarationsLowering(
             val constructorsCallingSuper = constructorsByDelegationKinds[ConstructorDelegationKind.CALLS_SUPER].orEmpty()
 
             if (constructorsCallingSuper.isEmpty() && constructorsByDelegationKinds[ConstructorDelegationKind.PARTIAL_LINKAGE_ERROR] == null) {
-                assert(irClass.origin.isSynthetic) { "Expected at least one constructor calling super; class: $irClass" }
+                assert(irClass.origin.isSynthetic) { "Expected at least one constructor calling super; class: ${irClass.render()}" }
                 return
             }
 
