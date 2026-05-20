@@ -740,4 +740,101 @@ class SwiftPMImportLocalPackagesIT : KGPBaseTest() {
             )
         }
     }
+
+    @GradleTest
+    fun `local swift package with valid slices for all apple targets`(version: GradleVersion) {
+        project("emptyxcode", version) {
+            val localSwiftPackageRelativePath = "../localSwiftPackage"
+            val localPackageDir = projectPath.resolve(localSwiftPackageRelativePath).createDirectories()
+            val targetName = "LocalSwiftPackage"
+
+            localPackageDir.resolve("Package.swift").writeText(
+                """
+                    // swift-tools-version: 5.9
+                    import PackageDescription
+
+                    let package = Package(
+                        name: "$targetName",
+                        platforms: [
+                            .iOS(.v15),
+                            .macOS(.v10_15),
+                            .tvOS(.v9),
+                            .watchOS(.v8),
+                        ],
+                        products: [
+                            .library(name: "$targetName", targets: ["$targetName"]),
+                        ],
+                        targets: [
+                            .target(name: "$targetName"),
+                        ]
+                    )
+                """.trimIndent()
+            )
+            writeLocalPackageSources(
+                sourcesDir = localPackageDir.resolve("Sources/$targetName"),
+                packageName = targetName,
+                sourceLanguage = SwiftPackageSourceLanguage.SWIFT_WITH_OBJC,
+            )
+
+            plugins {
+                kotlin("multiplatform")
+            }
+            buildScriptInjection {
+                project.applyMultiplatform {
+                    listOf(
+                        iosArm64(),
+                        iosX64(),
+                        iosSimulatorArm64(),
+                        macosArm64(),
+                        tvosArm64(),
+                        tvosSimulatorArm64(),
+                        watchosArm32(),
+                        watchosArm64(),
+                        watchosSimulatorArm64(),
+                        watchosDeviceArm64(),
+                    ).forEach {
+                        it.binaries.framework {
+                            baseName = "Shared"
+                            isStatic = true
+                        }
+                    }
+
+                    swiftPMDependencies {
+                        watchosMinimumDeploymentTarget.set("26.1") // WA for KT-86215 invalid default watchOS minimum deployment target version
+                        localSwiftPackage(
+                            directory = project.layout.projectDirectory.dir(localSwiftPackageRelativePath),
+                            products = listOf(targetName),
+                        )
+                    }
+                }
+            }
+
+            kotlinSourcesDir("appleMain")
+                .createDirectories().resolve("temp.kt")
+                .createFile()
+                .writeText(
+                    """
+                        class AppleMain
+                        
+                        @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+                        fun localGreeting(): String {
+                            return swiftPMImport.emptyxcode.LocalHelper.greeting()
+                        }
+                    """.trimIndent()
+                )
+
+            build(
+                "integrateLinkagePackage",
+                environmentVariables = EnvironmentalVariables(
+                    "XCODEPROJ_PATH" to "iosApp/iosApp.xcodeproj"
+                )
+            )
+
+            build("assemble")
+
+            buildXcodeProject(
+                xcodeproj = projectPath.resolve("iosApp/iosApp.xcodeproj"),
+            )
+        }
+    }
 }
