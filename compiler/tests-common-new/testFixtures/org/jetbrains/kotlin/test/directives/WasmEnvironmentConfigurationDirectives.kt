@@ -77,7 +77,7 @@ object WasmEnvironmentConfigurationDirectives : SimpleDirectivesContainer() {
                 return@valueDirective null
             }
             if (parts["os"]?.lowercase() !in listOf(null, "linux", "windows", "mac")) {
-                System.err.println("Invalid OS specified in WASM_IGNORE_FOR directive: os=${parts["os"]}. Only know linux, windows, mac (case insensitive)")
+                System.err.println("Invalid OS specified in WASM_IGNORE_FOR directive: os=${parts["os"]}. Must be linux, windows, or mac (case insensitive)")
                 return@valueDirective null
             }
             // NOTE: mode mismatch will be caught by WasmCompilationMode.valueOf
