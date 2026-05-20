@@ -42,6 +42,12 @@ public class SwiftExportExecutionTestGenerated extends AbstractSwiftExportExecut
   }
 
   @Test
+  @TestMetadata("cinteropReexport")
+  public void testCinteropReexport() {
+    runTest("native/swift/swift-export-standalone-integration-tests/simple/testData/execution/cinteropReexport/");
+  }
+
+  @Test
   @TestMetadata("classMappings")
   public void testClassMappings() {
     runTest("native/swift/swift-export-standalone-integration-tests/simple/testData/execution/classMappings/");

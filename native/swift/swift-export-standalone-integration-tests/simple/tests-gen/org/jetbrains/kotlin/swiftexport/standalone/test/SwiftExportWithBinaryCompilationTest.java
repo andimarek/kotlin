@@ -42,6 +42,12 @@ public class SwiftExportWithBinaryCompilationTest extends AbstractSwiftExportWit
   }
 
   @Test
+  @TestMetadata("cinteropReexport")
+  public void testCinteropReexport() {
+    runTest("native/swift/swift-export-standalone-integration-tests/simple/testData/generation/cinteropReexport/");
+  }
+
+  @Test
   @TestMetadata("classes")
   public void testClasses() {
     runTest("native/swift/swift-export-standalone-integration-tests/simple/testData/generation/classes/");
