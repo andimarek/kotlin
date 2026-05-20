@@ -16,6 +16,8 @@ import org.jetbrains.kotlin.config.scriptingHostConfiguration
 import org.jetbrains.kotlin.extensions.CompilerConfigurationExtension
 import org.jetbrains.kotlin.fir.extensions.CollectAdditionalSourceFilesExtension
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
+import org.jetbrains.kotlin.resolve.extensions.ExtraImportsProviderExtension
+import org.jetbrains.kotlin.resolve.extensions.SyntheticResolveExtension
 import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptConfigurationsProvider
 import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptDefinitionProvider
 import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ReplLoweringExtension
@@ -25,6 +27,8 @@ import org.jetbrains.kotlin.scripting.compiler.plugin.fir.CollectAdditionalScrip
 import org.jetbrains.kotlin.scripting.configuration.ScriptingConfigurationKeys.ENABLE_SCRIPT_EXPLANATION_OPTION
 import org.jetbrains.kotlin.scripting.definitions.ScriptConfigurationsProvider
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionProvider
+import org.jetbrains.kotlin.scripting.extensions.ScriptExtraImportsProviderExtension
+import org.jetbrains.kotlin.scripting.extensions.ScriptingResolveExtension
 import kotlin.script.experimental.host.ScriptingHostConfiguration
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
 
@@ -52,6 +56,9 @@ class ScriptingK2CompilerPluginRegistrar : CompilerPluginRegistrar() {
 
         CollectAdditionalSourceFilesExtension.registerExtension(CollectAdditionalScriptSourcesExtension())
         ScriptEvaluationExtension.registerExtension(JvmCliScriptEvaluationExtension())
+        SyntheticResolveExtension.registerExtension(ScriptingResolveExtension())
+        ExtraImportsProviderExtension.registerExtension(ScriptExtraImportsProviderExtension())
+
         val scriptDefinitionProvider = CliScriptDefinitionProvider()
         ScriptDefinitionProvider.registerExtension(scriptDefinitionProvider)
         ScriptConfigurationsProvider.registerExtension(
