@@ -10,7 +10,7 @@ fun foo(param: ((Int) -> String) -> String) {
 
 fun bar(param: ((Int) -> String, (Boolean) -> String) -> String) {
     bar {
-        <!EXPECTED_PARAMETER_TYPE_MISMATCH!>f: String<!>, g: Boolean -> <!UNRESOLVED_REFERENCE!>f<!>(42, 20)
+        <!EXPECTED_PARAMETER_TYPE_MISMATCH!>f: String<!>, <!EXPECTED_PARAMETER_TYPE_MISMATCH!>g: Boolean<!> -> <!UNRESOLVED_REFERENCE!>f<!>(42, 20)
     }
 }
 
