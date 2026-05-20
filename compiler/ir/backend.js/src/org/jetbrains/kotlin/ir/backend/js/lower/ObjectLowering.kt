@@ -42,6 +42,7 @@ import org.jetbrains.kotlin.utils.addToStdlib.safeAs
  * @param initializeParentCompanions When true, companion objects will initialize their enclosing
  * class's superclass companion first, so the initialization order matches the JVM (parent companion
  * before child companion). JS leaves this false to preserve existing behavior.
+ * But see KT-40768 and KT-86422.
  */
 @PhasePrerequisites(EnumClassCreateInitializerLowering::class)
 class ObjectDeclarationLowering(
@@ -73,9 +74,16 @@ class ObjectDeclarationLowering(
         // When initializeParentCompanions is enabled, a companion object's getInstance() will first
         // ensure the enclosing class's superclass companion is initialized. This matches the JVM
         // class-initialization protocol where a superclass is always initialized before its subclass.
+        // We walk up the superclass chain to find the nearest ancestor that has a companion, because
+        // intermediate classes without companions must not block the chain.
         val parentCompanionGetInstanceFun = if (initializeParentCompanions && declaration.isCompanion) {
-            declaration.parent.safeAs<IrClass>()?.superClass?.companionObject()
-                ?.let { getOrCreateGetInstanceFunction(it) }
+            var superClass = declaration.parent.safeAs<IrClass>()?.superClass
+            var result: IrSimpleFunction? = null
+            while (superClass != null && result == null) {
+                result = superClass.companionObject()?.let { getOrCreateGetInstanceFunction(it) }
+                superClass = superClass.superClass
+            }
+            result
         } else null
 
         getInstanceFun.body = context.irFactory.createBlockBody(UNDEFINED_OFFSET, UNDEFINED_OFFSET) {
