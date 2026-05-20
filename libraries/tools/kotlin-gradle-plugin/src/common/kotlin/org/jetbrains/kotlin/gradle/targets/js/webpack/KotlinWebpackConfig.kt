@@ -62,7 +62,9 @@ data class KotlinWebpackConfig(
     var resolveFromModulesFirst: Boolean = false,
     var resolveLoadersFromKotlinToolingDir: Boolean = false,
     /**
-     * Defines expressions that will be substituted in the final bundle file
+     * Defines expressions that will be substituted in the final bundle file.
+     *
+     * See https://webpack.js.org/plugins/define-plugin/
      */
     var definedExpressions: MutableMap<String, String> = mutableMapOf(),
 ) : WebpackRulesDsl {
