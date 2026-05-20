@@ -35,7 +35,6 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 import org.jetbrains.kotlin.gradle.targets.js.testing.*
 import org.jetbrains.kotlin.gradle.targets.js.webTargetVariant
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-import org.jetbrains.kotlin.gradle.targets.js.webpack.defaultWasmDefinedExpressions
 import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsRootExtension
 import org.jetbrains.kotlin.gradle.targets.web.nodejs.BaseNodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.web.nodejs.BaseNodeJsRootExtension
@@ -146,8 +145,10 @@ class KotlinKarma internal constructor(
         rules = project.objects.webpackRulesContainer(),
         experiments = mutableSetOf("topLevelAwait"),
         resolveLoadersFromKotlinToolingDir = isWasm,
-        definedExpressions = if (isWasm) defaultWasmDefinedExpressions() else mutableMapOf(),
-    )
+        objects = objects,
+    ).also {
+        it.defineNonBrowserEnvironmentProperties.set(isWasm)
+    }
 
     init {
         requiredDependencies.add(versions.karma)

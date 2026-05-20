@@ -9,6 +9,8 @@ package org.jetbrains.kotlin.gradle.targets.js.webpack
 
 import com.google.gson.*
 import com.google.gson.annotations.SerializedName
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.targets.js.NpmVersions
 import org.jetbrains.kotlin.gradle.targets.js.RequiredKotlinJsDependency
@@ -61,13 +63,17 @@ data class KotlinWebpackConfig(
     var progressReporter: Boolean = false,
     var resolveFromModulesFirst: Boolean = false,
     var resolveLoadersFromKotlinToolingDir: Boolean = false,
-    /**
-     * Defines expressions that will be substituted in the final bundle file.
-     *
-     * See https://webpack.js.org/plugins/define-plugin/
-     */
-    var definedExpressions: MutableMap<String, String> = mutableMapOf(),
+    private val objects: ObjectFactory,
 ) : WebpackRulesDsl {
+
+    /**
+     * When enabled, adds webpack [DefinePlugin](https://webpack.js.org/plugins/define-plugin/) entries
+     * that mark non-browser JS environments (Node.js, Deno, d8, etc.) as undefined.
+     * This helps the bundler remove dead code produced by the Wasm compiler
+     * that targets environments other than the browser.
+     */
+    val defineNonBrowserEnvironmentProperties: Property<Boolean> =
+        objects.property(Boolean::class.java).convention(false)
 
     val entryInput: String?
         get() = npmProjectDir?.get()?.let { npmProjectDir -> entry?.relativeTo(npmProjectDir)?.invariantSeparatorsPath }
@@ -348,7 +354,9 @@ data class KotlinWebpackConfig(
     }
 
     private fun Appendable.appendDefinePluginForBrowser() {
-        if (definedExpressions.isEmpty()) return
+        if (!defineNonBrowserEnvironmentProperties.get()) return
+
+        val expressions = defaultWasmDefinedExpressions()
 
         //language=JavaScript 1.8
         appendLine(
@@ -359,7 +367,7 @@ data class KotlinWebpackConfig(
 
                     config.plugins.push(
                         new webpack.DefinePlugin({
-${definedExpressions()}
+${expressions.formatDefinedExpressions()}
                         })
                     )
                 })(config);
@@ -367,10 +375,6 @@ ${definedExpressions()}
             """.trimIndent()
         )
     }
-
-    private fun definedExpressions() = definedExpressions.map { (expression, value) ->
-        "${expression.jsQuoted()}: $value"
-    }.joinToString(separator = ",\n") { "    ".repeat(7) + it }
 
     private fun Appendable.appendSourceMaps() {
         if (!sourceMaps) return
@@ -540,10 +544,14 @@ private fun String.unquoteRawJsRelativePath(): String {
     }
 }
 
-internal fun defaultWasmDefinedExpressions(): MutableMap<String, String> = mutableMapOf(
+private fun defaultWasmDefinedExpressions(): Map<String, String> = mapOf(
     "typeof process" to "JSON.stringify('undefined')",
     "typeof Deno" to "JSON.stringify('undefined')",
     "typeof d8" to "JSON.stringify('undefined')",
     "typeof inIon" to "JSON.stringify('undefined')",
     "typeof jscOptions" to "JSON.stringify('undefined')",
 )
+
+private fun Map<String, String>.formatDefinedExpressions() = map { (expression, value) ->
+    "${expression.jsQuoted()}: $value"
+}.joinToString(separator = ",\n") { "    ".repeat(7) + it }

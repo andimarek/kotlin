@@ -214,8 +214,11 @@ internal constructor(
      * KT-77145 Workaround because [KotlinWebpackConfig] doesn't use Provider API.
      */
     private val fakeWebpackConfig: KotlinWebpackConfig = KotlinWebpackConfig(
-        rules = project.objects.webpackRulesContainer()
-    )
+        rules = project.objects.webpackRulesContainer(),
+        objects = project.objects,
+    ).also {
+        it.defineNonBrowserEnvironmentProperties.set(false)
+    }
 
     fun webpackConfigApplier(body: Action<KotlinWebpackConfig>) {
         body.execute(fakeWebpackConfig)
@@ -252,8 +255,10 @@ internal constructor(
         sourceMaps = sourceMaps,
         resolveFromModulesFirst = resolveFromModulesFirst,
         resolveLoadersFromKotlinToolingDir = getIsWasm.get(),
-        definedExpressions = if (getIsWasm.get()) defaultWasmDefinedExpressions() else mutableMapOf(),
-    )
+        objects = objects,
+    ).also {
+        it.defineNonBrowserEnvironmentProperties.set(getIsWasm)
+    }
 
     private fun createRunner(): KotlinWebpackRunner {
         val config = createWebpackConfig()
@@ -313,7 +318,9 @@ internal constructor(
             runner.copy(
                 config = runner.config.copy(
                     progressReporter = true,
-                )
+                ).also {
+                    it.defineNonBrowserEnvironmentProperties.set(runner.config.defineNonBrowserEnvironmentProperties)
+                }
             ).execute()
 
             val buildMetrics = metrics.get()
