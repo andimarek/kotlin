@@ -52,6 +52,7 @@ import org.jetbrains.kotlin.types.model.K2Only
 import org.jetbrains.kotlin.util.getPreviousSibling
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
+import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
 import org.jetbrains.kotlin.utils.addToStdlib.shouldNotBeCalled
@@ -118,28 +119,29 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
 ): List<KtDiagnostic> {
     val typeContext = session.typeContext
     val genericDiagnostic = FirErrors.INAPPLICABLE_CANDIDATE.createOn(source, candidate.symbol, session)
+    val diagnostics = mutableSetOf<KtDiagnostic>()
 
-    val diagnostics = candidate.diagnostics.filter { !it.isSuccess }.flatMap { rootCause ->
-        when (rootCause) {
+    for (rootCause in candidate.diagnostics.filter { !it.isSuccess }) {
+        diagnostics += when (rootCause) {
             is VarargArgumentOutsideParentheses -> FirErrors.VARARG_OUTSIDE_PARENTHESES.createOn(
                 rootCause.argument.source ?: qualifiedAccessSource,
                 session
-            ).let(::listOfNotNull)
+            )
 
             is NamedArgumentNotAllowed -> FirErrors.NAMED_ARGUMENTS_NOT_ALLOWED.createOn(
                 rootCause.argument.source,
                 rootCause.forbiddenNamedArgumentsTarget,
                 session
-            ).let(::listOfNotNull)
+            )
 
             is MixingNamedAndPositionArguments -> FirErrors.MIXING_NAMED_AND_POSITIONAL_ARGUMENTS.createOn(
                 rootCause.argument.source,
                 session,
-            ).let(::listOfNotNull)
+            )
 
             is ArgumentTypeMismatch -> {
-                if (!candidate.usedOuterCs && rootCause.systemHadContradiction) return@flatMap emptyList()
-                argumentTypeMismatch(
+                if (!candidate.usedOuterCs && rootCause.systemHadContradiction) continue
+                diagnostics += argumentTypeMismatch(
                     source = rootCause.argument.source ?: source,
                     expectedType = rootCause.expectedType.substituteTypeVariableTypes(
                         candidate,
@@ -160,6 +162,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     argument = rootCause.argument,
                     session,
                 )
+                continue
             }
 
             is UnitReturnTypeLambdaContradictsExpectedType -> {
@@ -175,39 +178,37 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     ),
                     false,
                     session // not isMismatchDueToNullability
-                ).let(::listOfNotNull)
+                )
             }
 
             // We don't report anything here, because there are already some errors inside the call or declaration
             // And the errors should be reported there
-            is ErrorTypeInArguments -> emptyList()
+            is ErrorTypeInArguments -> null
 
             // see EagerResolveOfCallableReferences
-            is UnsuccessfulCallableReferenceArgument -> emptyList()
-            is UnsuccessfulCollectionLiteralArgument -> emptyList()
+            is UnsuccessfulCallableReferenceArgument -> null
+            is UnsuccessfulCollectionLiteralArgument -> null
 
             is MultipleContextReceiversApplicableForExtensionReceivers ->
                 FirErrors.AMBIGUOUS_CALL_WITH_IMPLICIT_CONTEXT_RECEIVER.createOn(qualifiedAccessSource ?: source, session)
-                    .let(::listOfNotNull)
 
-            is NoReceiverAllowed -> FirErrors.NO_RECEIVER_ALLOWED.createOn(qualifiedAccessSource ?: source, session).let(::listOfNotNull)
+            is NoReceiverAllowed -> FirErrors.NO_RECEIVER_ALLOWED.createOn(qualifiedAccessSource ?: source, session)
 
             is NoContextArgument ->
                 FirErrors.NO_CONTEXT_ARGUMENT.createOn(
                     qualifiedAccessSource ?: source,
                     rootCause.symbol,
                     session
-                ).let(::listOfNotNull)
+                )
 
             is UnsupportedContextualDeclarationCall -> FirErrors.UNSUPPORTED_CONTEXTUAL_DECLARATION_CALL.createOn(source, session)
-                .let(::listOfNotNull)
 
             is AmbiguousContextArgument ->
                 FirErrors.AMBIGUOUS_CONTEXT_ARGUMENT.createOn(
                     qualifiedAccessSource ?: source,
                     rootCause.symbol,
                     session
-                ).let(::listOfNotNull)
+                )
 
             is TypeVariableAsExplicitReceiver -> {
                 val typeParameter = rootCause.typeParameter
@@ -217,7 +218,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     typeParameter.symbol.containingDeclarationSymbol.memberDeclarationNameOrNull
                         ?: error("containingDeclarationSymbol must have been a member declaration"),
                     session
-                ).let(::listOfNotNull)
+                )
             }
 
             is NullForNotNullType -> FirErrors.NULL_FOR_NONNULL_TYPE.createOn(
@@ -225,39 +226,39 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     candidate,
                     typeContext,
                 ), session
-            ).let(::listOfNotNull)
+            )
 
             is NonVarargSpread -> FirErrors.NON_VARARG_SPREAD.createOn(
                 rootCause.argument.source?.getChild(KtTokens.MUL, depth = 1)!!,
                 session
-            ).let(::listOfNotNull)
-            is ArgumentPassedTwice -> FirErrors.ARGUMENT_PASSED_TWICE.createOn(rootCause.argument.source, session).let(::listOfNotNull)
+            )
+            is ArgumentPassedTwice -> FirErrors.ARGUMENT_PASSED_TWICE.createOn(rootCause.argument.source, session)
             is TooManyArguments ->
-                unexpectedTrailingLambdaOnNewLineOrNull(rootCause.argument, session)?.let(::listOf)
+                unexpectedTrailingLambdaOnNewLineOrNull(rootCause.argument, session)
                     ?: FirErrors.TOO_MANY_ARGUMENTS.createOn(
                         rootCause.argument.source ?: source,
                         rootCause.function.symbol,
                         session
-                    ).let(::listOfNotNull)
+                    )
             is NoValueForParameter -> {
                 val symbol = rootCause.valueParameter.symbol
                 FirErrors.NO_VALUE_FOR_PARAMETER.createOn(
                     qualifiedAccessSource ?: source,
                     symbol.resolvedReturnType.valueParameterName(session) ?: symbol.name,
                     session
-                ).let(::listOfNotNull)
+                )
             }
 
             is NameNotFound -> FirErrors.NAMED_PARAMETER_NOT_FOUND.createOn(
                 rootCause.argument.source ?: source,
                 rootCause.argument.name.asString(),
                 session
-            ).let(::listOfNotNull)
+            )
 
             is NameForAmbiguousParameter -> FirErrors.NAME_FOR_AMBIGUOUS_PARAMETER.createOn(
                 rootCause.argument.source ?: source,
                 session
-            ).let(::listOfNotNull)
+            )
 
             is InapplicableNullableReceiver -> inapplicableNullableReceiver(
                 candidate,
@@ -265,26 +266,25 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 source,
                 qualifiedAccessSource,
                 session
-            ).let(::listOfNotNull)
+            )
             is ManyLambdaExpressionArguments ->
-                unexpectedTrailingLambdaOnNewLineOrNull(rootCause.argument, session)?.let(::listOf)
+                unexpectedTrailingLambdaOnNewLineOrNull(rootCause.argument, session)
                     ?: FirErrors.MANY_LAMBDA_EXPRESSION_ARGUMENTS.createOn(
                         rootCause.argument.source ?: source,
                         session
-                    ).let(::listOfNotNull)
+                    )
             is InfixCallOfNonInfixFunction -> FirErrors.INFIX_MODIFIER_REQUIRED.createOn(source, rootCause.function, session)
-                .let(::listOfNotNull)
             is OperatorCallOfNonOperatorFunction ->
-                FirErrors.OPERATOR_MODIFIER_REQUIRED.createOn(source, rootCause.function, session).let(::listOfNotNull)
+                FirErrors.OPERATOR_MODIFIER_REQUIRED.createOn(source, rootCause.function, session)
 
             is OperatorCallOfConstructor -> FirErrors.OPERATOR_CALL_ON_CONSTRUCTOR.createOn(
                 source,
                 rootCause.constructor.name.asString(),
                 session
-            ).let(::listOfNotNull)
-            is UnstableSmartCast -> rootCause.mapUnstableSmartCast(session).let(::listOfNotNull)
+            )
+            is UnstableSmartCast -> rootCause.mapUnstableSmartCast(session)
 
-            is DslScopeViolation -> FirErrors.DSL_SCOPE_VIOLATION.createOn(source, rootCause.calleeSymbol, session).let(::listOfNotNull)
+            is DslScopeViolation -> FirErrors.DSL_SCOPE_VIOLATION.createOn(source, rootCause.calleeSymbol, session)
             is ReceiverShadowedByContextParameter -> {
                 FirErrors.RECEIVER_SHADOWED_BY_CONTEXT_PARAMETER.createOn(
                     source,
@@ -292,15 +292,16 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     rootCause.isDispatchOfMemberExtension,
                     rootCause.compatibleContextParameters,
                     session
-                ).let(::listOfNotNull)
+                )
             }
             is InferenceError -> {
-                rootCause.constraintError.mapConstraintSystemError(
+                diagnostics += rootCause.constraintError.mapConstraintSystemError(
                     source,
                     qualifiedAccessSource,
                     session,
                     candidate
                 )
+                continue
             }
 
             is InferredEmptyIntersectionDiagnostic -> inferredIntoEmptyIntersection(
@@ -311,58 +312,58 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 rootCause.kind,
                 isError = rootCause.isError,
                 session
-            ).let(::listOfNotNull)
+            )
 
             is AdaptedCallableReferenceIsUsedWithReflection -> FirErrors.ADAPTED_CALLABLE_REFERENCE_AGAINST_REFLECTION_TYPE.createOn(
                 qualifiedAccessSource,
                 session
-            ).let(::listOfNotNull)
+            )
 
             // Reported later
-            is TypeParameterAsExpression -> emptyList()
+            is TypeParameterAsExpression -> null
 
             is AmbiguousInterceptedSymbol -> FirErrors.PLUGIN_AMBIGUOUS_INTERCEPTED_SYMBOL.createOn(source, rootCause.pluginNames, session)
-                .let(::listOfNotNull)
 
             is MissingInnerClassConstructorReceiver -> FirErrors.INNER_CLASS_CONSTRUCTOR_NO_RECEIVER.createOn(
                 qualifiedAccessSource ?: source,
                 rootCause.candidateSymbol,
                 session
-            ).let(::listOfNotNull)
+            )
 
             is WrongNumberOfTypeArguments -> FirErrors.WRONG_NUMBER_OF_TYPE_ARGUMENTS.createOn(
                 qualifiedAccessSource ?: source,
                 rootCause.desiredCount, rootCause.symbol, session
-            ).let(::listOfNotNull)
+            )
 
             is InaccessibleOuterClassReceiver -> FirErrors.INACCESSIBLE_OUTER_CLASS_RECEIVER.createOn(
                 qualifiedAccessSource ?: source,
                 rootCause.symbol,
                 session
-            ).let(::listOfNotNull)
+            )
 
             is InaccessibleFromClassHeader -> FirErrors.INSTANCE_ACCESS_BEFORE_SUPER_CALL.createOn(
                 qualifiedAccessSource ?: source,
                 "<this>",
                 session,
-            ).let(::listOfNotNull)
+            )
 
             UnsupportedCompanionBlockOrExtensionCall -> FirErrors.UNSUPPORTED_FEATURE.createOn(
                 qualifiedAccessSource ?: source,
                 LanguageFeature.CompanionBlocksAndExtensions to session.languageVersionSettings,
                 session,
                 positioningStrategy = SourceElementPositioningStrategies.REFERENCE_BY_QUALIFIED,
-            ).let(::listOfNotNull)
+            )
 
-            else -> genericDiagnostic.takeIf { candidate.symbol !is FirSyntheticFunctionSymbol }.let(::listOfNotNull)
-        }
-    }.distinct()
+            else -> genericDiagnostic.takeIf { candidate.symbol !is FirSyntheticFunctionSymbol }
+        } ?: continue
+    }
+
     return if (diagnostics.size > 1) {
         // If there are more specific diagnostics, filter out the generic diagnostic.
         diagnostics.filter { it != genericDiagnostic }
     } else {
         diagnostics
-    }
+    }.toList()
 }
 
 private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
@@ -799,11 +800,11 @@ private fun argumentTypeMismatch(
         expectedType.isSomeFunctionType(session) && actualType.isSomeFunctionType(session)
                 && expectedType.typeArguments.size == actualType.typeArguments.size
 
-    return when {
+    val diagnostic = when {
         anonymousFunctionIfReturnExpression != null ->
             FirErrors.RETURN_TYPE_MISMATCH.createOn(
                 source, expectedType, actualType, anonymousFunctionIfReturnExpression, isMismatchDueToNullability, session
-            ).let(::listOfNotNull)
+            )
         expectedType is ConeCapturedType && expectedType.isBasedOnStarOrOut() && receiverType != null ->
             FirErrors.MEMBER_PROJECTED_OUT.createOn(
                 source,
@@ -811,24 +812,21 @@ private fun argumentTypeMismatch(
                 expectedType.projectionKindAsString(),
                 symbol.originalOrSelf(),
                 session,
-            ).let(::listOfNotNull)
+            )
         argument is FirAnonymousFunctionExpression && areFunctionTypesWithCompatibleReturnType() -> {
             val lambdaParameters = argument.anonymousFunction.valueParameters
-            val diagnosticsFromParameters = mutableListOf<KtDiagnostic>()
 
-            for (it in lambdaParameters.indices) {
-                val parameter = lambdaParameters[it]
+            lambdaParameters.withIndex().mapNotNull { [it, parameter] ->
                 val actualType = parameter.returnTypeRef.coneType
-                val expectedTypeArgument = expectedType.typeArguments.getOrNull(it) ?: continue
-                val expectedType = (expectedTypeArgument as? ConeKotlinTypeProjection)?.type ?: continue
+                val expectedTypeArgument = expectedType.typeArguments.getOrNull(it)
+                val expectedType = (expectedTypeArgument as? ConeKotlinTypeProjection)?.type
 
-                if (!actualType.isSubtypeOf(expectedType, session)) {
-                    FirErrors.EXPECTED_PARAMETER_TYPE_MISMATCH.createOn(parameter.source, actualType, expectedType, session)
-                        ?.let { diagnosticsFromParameters += it }
+                when {
+                    expectedType == null || actualType.isSubtypeOf(expectedType, session) -> null
+                    else -> FirErrors.EXPECTED_PARAMETER_TYPE_MISMATCH.createOn(parameter.source, actualType, expectedType, session)
                 }
-            }
-            if (diagnosticsFromParameters.isNotEmpty()) {
-                return diagnosticsFromParameters
+            }.ifNotEmpty {
+                return this
             }
 
             FirErrors.ARGUMENT_TYPE_MISMATCH.createOn(
@@ -837,7 +835,7 @@ private fun argumentTypeMismatch(
                 expectedType,
                 isMismatchDueToNullability,
                 session
-            ).let(::listOfNotNull)
+            )
         }
         else -> FirErrors.ARGUMENT_TYPE_MISMATCH.createOn(
             source,
@@ -845,8 +843,10 @@ private fun argumentTypeMismatch(
             expectedType,
             isMismatchDueToNullability,
             session
-        ).let(::listOfNotNull)
+        )
     }
+
+    return listOfNotNull(diagnostic)
 }
 
 private fun UnstableSmartCast.mapUnstableSmartCast(session: FirSession): KtDiagnostic? {
@@ -880,7 +880,8 @@ private fun ConstraintSystemError.mapConstraintSystemError(
     }
 
     val typeContext = session.typeContext
-    return when (this) {
+
+    val diagnostic = when (this) {
         is NewConstraintError -> {
             val position = position.from
             val (argument, reportOn) =
@@ -928,10 +929,10 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                         inferredType.substituteTypeVariableTypes(candidate, typeContext),
                         typeMismatchDueToNullability,
                         session
-                    ).let(::listOfNotNull)
+                    )
                 }
 
-                else -> emptyList()
+                else -> null
             }
         }
 
@@ -943,9 +944,9 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                         source,
                         lookupTag.typeParameterSymbol,
                         session
-                    ).let(::listOfNotNull)
-                } else emptyList()
-            } else emptyList()
+                    )
+                } else null
+            } else null
 
         is InferredEmptyIntersection -> {
             fun AbstractCallCandidate<*>.sourceOfCallToSymbolWith(
@@ -986,7 +987,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                 kind,
                 this is InferredEmptyIntersectionError,
                 session,
-            ).let(::listOfNotNull)
+            )
         }
 
         is OnlyInputTypesDiagnostic -> {
@@ -994,7 +995,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                 source,
                 (typeVariable as ConeTypeParameterBasedTypeVariable).typeParameterSymbol,
                 session
-            ).let(::listOfNotNull)
+            )
         }
 
         is AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction -> {
@@ -1005,13 +1006,15 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                 typeParameterSymbol.containingDeclarationSymbol.memberDeclarationNameOrNull
                     ?: error("containingDeclarationSymbol must have been a member declaration"),
                 session
-            ).let(::listOfNotNull)
+            )
         }
 
         is MultiLambdaBuilderInferenceRestriction<*> -> shouldNotBeCalled()
 
-        else -> emptyList()
+        else -> null
     }
+
+    return listOfNotNull(diagnostic)
 }
 
 private fun ConeKotlinType.substituteTypeVariableTypes(
