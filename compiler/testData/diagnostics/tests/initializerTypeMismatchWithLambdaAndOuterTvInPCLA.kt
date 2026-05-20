@@ -18,7 +18,7 @@ fun tst() {
     }
 
     buildBox {
-        get <!ARGUMENT_TYPE_MISMATCH("(Int, String) -> Unit; (uninferred T (of fun <T> buildBox), Int) -> Unit")!>{ x: Int, y: String -> }<!>
+        get { <!EXPECTED_PARAMETER_TYPE_MISMATCH("Int; uninferred T (of fun <T> buildBox)")!>x: Int<!>, y: String -> }
         put(42)
     }
 
@@ -28,7 +28,7 @@ fun tst() {
     }
 
     buildBox {
-        get <!ARGUMENT_TYPE_MISMATCH("(Int, String) -> Unit; (uninferred T (of fun <T> buildBox), Int) -> Unit")!>{ x, y: String -> }<!>
+        get { <!EXPECTED_PARAMETER_TYPE_MISMATCH("Int; uninferred T (of fun <T> buildBox)")!>x<!>, y: String -> }
         put(42)
     }
 }

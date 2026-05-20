@@ -52,6 +52,7 @@ import org.jetbrains.kotlin.types.model.K2Only
 import org.jetbrains.kotlin.util.getPreviousSibling
 import org.jetbrains.kotlin.utils.addIfNotNull
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstanceOrNull
+
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
 import org.jetbrains.kotlin.utils.addToStdlib.shouldNotBeCalled
 
@@ -156,6 +157,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     isMismatchDueToNullability = rootCause.isMismatchDueToNullability,
                     candidate = candidate,
                     rootCause.anonymousFunctionIfReturnExpression,
+                    argument = rootCause.argument,
                     session,
                 )
             }
@@ -780,6 +782,7 @@ private fun argumentTypeMismatch(
      * See [ArgumentTypeMismatch.anonymousFunctionIfReturnExpression]
      */
     anonymousFunctionIfReturnExpression: FirAnonymousFunction?,
+    argument: FirElement,
     session: FirSession,
 ): KtDiagnostic? {
     val symbol = candidate.symbol as FirCallableSymbol
@@ -787,6 +790,14 @@ private fun argumentTypeMismatch(
 
     fun ConeCapturedType.isBasedOnStarOrOut(): Boolean =
         constructor.projection.kind.let { it == ProjectionKind.OUT || it == ProjectionKind.STAR }
+
+    fun areFunctionTypesWithCompatibleReturnType(argument: FirAnonymousFunctionExpression): Boolean {
+        if (!expectedType.isSomeFunctionType(session) || !actualType.isSomeFunctionType(session)) return false
+        if (expectedType.typeArguments.isEmpty() || actualType.typeArguments.isEmpty()) return false
+        if (expectedType.typeArguments.size != actualType.typeArguments.size) return false
+        if (argument.anonymousFunction.valueParameters.size != expectedType.typeArguments.size - 1) return false
+        return true
+    }
 
     return when {
         anonymousFunctionIfReturnExpression != null ->
@@ -801,6 +812,27 @@ private fun argumentTypeMismatch(
                 symbol.originalOrSelf(),
                 session,
             )
+        argument is FirAnonymousFunctionExpression && areFunctionTypesWithCompatibleReturnType(argument) -> {
+            val lambdaParameters = argument.anonymousFunction.valueParameters
+
+            for (it in lambdaParameters.indices) {
+                val parameter = lambdaParameters[it]
+                val actualType = parameter.returnTypeRef.coneType
+                val expectedType = (expectedType.typeArguments[it] as? ConeKotlinTypeProjection)?.type ?: continue
+
+                if (!actualType.isSubtypeOf(expectedType, session)) {
+                    return FirErrors.EXPECTED_PARAMETER_TYPE_MISMATCH.createOn(parameter.source, actualType, expectedType, session)
+                }
+            }
+
+            FirErrors.ARGUMENT_TYPE_MISMATCH.createOn(
+                source,
+                actualType,
+                expectedType,
+                isMismatchDueToNullability,
+                session
+            )
+        }
         else -> FirErrors.ARGUMENT_TYPE_MISMATCH.createOn(
             source,
             actualType,
@@ -871,6 +903,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                     isMismatchDueToNullability = typeMismatchDueToNullability,
                     candidate = candidate,
                     anonymousFunctionIfReturnExpression = (position as? ConeLambdaArgumentConstraintPosition)?.lambda,
+                    argument = it,
                     session = session,
                 )
             }
