@@ -167,13 +167,10 @@ class LauncherScriptTest : TestCaseWithTmpdir() {
             "kotlinc-wasm",
             "$testDataDirectory/emptyMain.kt",
             KotlinWasmCompilerArguments::suppressWarnings.cliArgument,
-            KotlinWasmCompilerArguments::libraries.cliArgument,
-            PathUtil.kotlinPathsForCompiler.wasmJsStdLibKlibPath.absolutePath,
+            KotlinWasmCompilerArguments::libraries.cliArgument(PathUtil.kotlinPathsForCompiler.wasmJsStdLibKlibPath.absolutePath),
             KotlinWasmCompilerArguments::nopack.cliArgument,
-            KotlinWasmCompilerArguments::outputDir.cliArgument,
-            tmpdir.path,
-            KotlinWasmCompilerArguments::moduleName.cliArgument,
-            "out",
+            KotlinWasmCompilerArguments::outputDir.cliArgument(tmpdir.path),
+            KotlinWasmCompilerArguments::moduleName.cliArgument("out"),
             environment = mapOf("JAVA_HOME" to KtTestUtil.getJdk8Home().absolutePath)
         )
     }
