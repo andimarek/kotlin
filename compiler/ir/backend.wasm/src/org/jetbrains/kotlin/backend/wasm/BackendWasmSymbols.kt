@@ -371,10 +371,7 @@ class BackendWasmSymbols(
 
     private val invokeOnExportedFunctionExitIfWasi: IrSimpleFunctionSymbol? by run {
         when (configuration.wasmTarget == WasmTarget.WASI) {
-            true -> {
-                val functionSymbol by CallableIds.invokeOnExportedFunctionExit.functionSymbol()
-                lazy { functionSymbol }
-            }
+            true -> CallableIds.invokeOnExportedFunctionExit.functionSymbol()
             else -> lazy { null }
         }
     }
