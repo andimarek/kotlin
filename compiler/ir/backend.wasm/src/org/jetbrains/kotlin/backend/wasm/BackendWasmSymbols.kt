@@ -237,13 +237,13 @@ class BackendWasmSymbols(
         val startCoroutineUninterceptedOrReturnIntrinsics0 by CallableIds.startCoroutineUninterceptedOrReturnIntrinsics0.functionSymbol()
         val startCoroutineUninterceptedOrReturnIntrinsics1 by CallableIds.startCoroutineUninterceptedOrReturnIntrinsics1.functionSymbol()
         val startCoroutineUninterceptedOrReturnIntrinsics2 by CallableIds.startCoroutineUninterceptedOrReturnIntrinsics2.functionSymbol()
-        lazy {
+        lazyOf(
             listOf(
                 startCoroutineUninterceptedOrReturnIntrinsics0,
                 startCoroutineUninterceptedOrReturnIntrinsics1,
                 startCoroutineUninterceptedOrReturnIntrinsics2,
             )
-        }
+        )
     }
 
     // KProperty implementations
@@ -372,7 +372,7 @@ class BackendWasmSymbols(
     private val invokeOnExportedFunctionExitIfWasi: IrSimpleFunctionSymbol? by run {
         when (configuration.wasmTarget == WasmTarget.WASI) {
             true -> CallableIds.invokeOnExportedFunctionExit.functionSymbol()
-            else -> lazy { null }
+            else -> lazyOf(null)
         }
     }
 

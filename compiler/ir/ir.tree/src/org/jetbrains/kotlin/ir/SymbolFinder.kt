@@ -65,7 +65,7 @@ private fun CallableId.propertySymbols(): Lazy<List<IrPropertySymbol>> {
     val topLevelClassId = this.classId
     if (topLevelClassId == null) {
         val symbols = holder.symbolFinder.findProperties(this).toList()
-        return lazy { symbols }
+        return lazyOf(symbols)
     }
 
     // If property is a member, then the class must be loaded first and then the property can be found lazily
@@ -90,7 +90,7 @@ fun CallableId.functionSymbols(): Lazy<List<IrSimpleFunctionSymbol>> {
     val topLevelClassId = this.classId
     if (topLevelClassId == null) {
         val symbols = holder.symbolFinder.findFunctions(this).toList()
-        return lazy { symbols }
+        return lazyOf(symbols)
     }
 
     // If function is a member, then the class must be loaded first and then the function can be found lazily

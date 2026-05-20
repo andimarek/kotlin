@@ -260,7 +260,7 @@ class BackendNativeSymbols(
     config: CompilerConfiguration,
 ) : PreSerializationNativeSymbols by PreSerializationNativeSymbols.Impl(irBuiltIns), BackendKlibSymbols(irBuiltIns) {
     val entryPoint by run {
-        val mainCallableId = config.getMainCallableId() ?: return@run lazy { null }
+        val mainCallableId = config.getMainCallableId() ?: return@run lazyOf(null)
         val unfilteredCandidates by mainCallableId.functionSymbols()
         lazy {
             fun IrType.isArrayMaybeOutString(): Boolean {
