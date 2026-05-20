@@ -127,6 +127,33 @@ class ResolvablePropertiesTests {
         assertEquals("-I/usr/include/c++/4.9.4", props.resolvablePropertyString("include"))
     }
 
+    @Test
+    fun `braced vars`() {
+        val props = propertiesOf(
+            "k1" to "v1",
+            "k2" to "foo_\${k1}-bar",
+        )
+        assertEquals("foo_v1-bar", props.resolvablePropertyString("k2"))
+    }
+
+    @Test
+    fun `vars in keys`() {
+        val props = propertiesOf(
+            "k1" to "v1",
+            "k2.\$k1" to "v2.\$k1",
+        )
+        assertEquals("v2.v1", props.resolvablePropertyString("k2.v1"))
+    }
+
+    @Test
+    fun `braces vars in keys`() {
+        val props = propertiesOf(
+            "k1" to "v1",
+            "k2.\${k1}" to "v2.\${k1}",
+        )
+        assertEquals("v2.v1", props.resolvablePropertyString("k2.v1"))
+    }
+
     companion object {
         private fun propertiesOf(vararg pairs: Pair<String, Any>): Properties =
             Properties().also {
