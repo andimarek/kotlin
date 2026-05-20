@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.analysis.api.fir.references.KDocReferenceResolver.ge
 import org.jetbrains.kotlin.analysis.api.scopes.KaScope
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.analysis.api.symbols.markers.KaDeclarationContainerSymbol
+import org.jetbrains.kotlin.analysis.api.types.symbol
 import org.jetbrains.kotlin.kdoc.parser.KDocKnownTag
 import org.jetbrains.kotlin.kdoc.psi.api.KDocElement
 import org.jetbrains.kotlin.kdoc.psi.impl.KDocLink
@@ -708,11 +709,33 @@ internal object KDocReferenceResolver {
                 extensions.filter { callable ->
                     if (!callable.isExtension) return@filter false
                     val expectedReceiverType = callable.receiverType ?: return@filter false
-                    createUnificationSubstitutor(
-                        actualReceiverType,
-                        expectedReceiverType,
-                        KaUnificationSubstitutorPolicy.EXISTENTIAL
-                    ) != null
+                    val expectedReceiverTypeSymbol = expectedReceiverType.symbol
+
+                    when {
+                        (expectedReceiverTypeSymbol as? KaClassSymbol)?.classKind == KaClassKind.COMPANION_OBJECT -> {
+                            val actualReceiverTypeSymbol = actualReceiverType.symbol
+                            /**
+                             * If the extension is defined on a companion object, the actual receiver symbol must be
+                             * either the same companion object or the enclosing class of this companion object.
+                             */
+                            actualReceiverTypeSymbol == expectedReceiverTypeSymbol ||
+                                    actualReceiverTypeSymbol == expectedReceiverTypeSymbol.containingSymbol
+                        }
+                        callable.isCompanion -> {
+                            /**
+                             * If the extension is a companion one, the actual receiver symbol must
+                             * match the expected one.
+                             */
+                            actualReceiverType.symbol == expectedReceiverTypeSymbol
+                        }
+                        else -> {
+                            createUnificationSubstitutor(
+                                actualReceiverType,
+                                expectedReceiverType,
+                                KaUnificationSubstitutorPolicy.EXISTENTIAL
+                            ) != null
+                        }
+                    }
                 }.toResolveResults(receiverClassReference = receiverClassSymbol).ifEmpty { null }
             }
         }.flatten()
