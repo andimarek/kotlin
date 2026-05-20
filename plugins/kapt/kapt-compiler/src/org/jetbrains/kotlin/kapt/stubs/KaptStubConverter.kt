@@ -33,9 +33,8 @@ import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap
 import org.jetbrains.kotlin.codegen.AsmUtil
 import org.jetbrains.kotlin.codegen.coroutines.CONTINUATION_PARAMETER_NAME
 import org.jetbrains.kotlin.codegen.coroutines.SUSPEND_FUNCTION_COMPLETION_PARAMETER_NAME
+import org.jetbrains.kotlin.constant.*
 import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.descriptors.annotations.AnnotationDescriptor
-import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.analysis.checkers.classKind
 import org.jetbrains.kotlin.fir.backend.FirAnnotationSourceElement
@@ -65,6 +64,9 @@ import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.descriptors.IrBasedClassDescriptor
+import org.jetbrains.kotlin.ir.descriptors.toIrBasedKotlinType
+import org.jetbrains.kotlin.ir.expressions.IrAnnotation
+import org.jetbrains.kotlin.ir.interpreter.toConstantValue
 import org.jetbrains.kotlin.ir.util.convertTo
 import org.jetbrains.kotlin.kapt.KaptContextForStubGeneration
 import org.jetbrains.kotlin.kapt.base.*
@@ -79,10 +81,10 @@ import org.jetbrains.kotlin.kapt.util.*
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.name.StandardClassIds
 import org.jetbrains.kotlin.name.isOneSegmentFQN
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.resolve.DescriptorUtils
-import org.jetbrains.kotlin.resolve.constants.*
 import org.jetbrains.kotlin.resolve.descriptorUtil.builtIns
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.resolve.descriptorUtil.isCompanionObject
@@ -104,7 +106,7 @@ import kotlin.math.sign
 import com.sun.tools.javac.util.List as JavacList
 
 class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val generateNonExistentClass: Boolean) {
-    private companion object {
+    internal companion object {
         private const val VISIBILITY_MODIFIERS = (Opcodes.ACC_PUBLIC or Opcodes.ACC_PRIVATE or Opcodes.ACC_PROTECTED).toLong()
         private const val MODALITY_MODIFIERS = (Opcodes.ACC_FINAL or Opcodes.ACC_ABSTRACT).toLong()
 
@@ -127,7 +129,7 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
 
         private val KOTLIN_METADATA_ANNOTATION = Metadata::class.java.name
 
-        private val NON_EXISTENT_CLASS_NAME = FqName("error.NonExistentClass")
+        val NON_EXISTENT_CLASS_NAME = FqName("error.NonExistentClass")
 
         private val JAVA_KEYWORD_FILTER_REGEX = "[a-z]+".toRegex()
 
@@ -395,6 +397,7 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
         if (isSynthetic(clazz.access)) return null
         if (!checkIfValidTypeName(clazz, Type.getObjectType(clazz.name))) return null
 
+        val declaration = kaptContext.origins[clazz]?.declaration ?: return null
         val descriptor = kaptContext.origins[clazz]?.descriptor ?: return null
 
         val isNested: Boolean
@@ -414,9 +417,9 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
 
         val modifiers = convertModifiers(
             clazz,
-            flags,
+            flags.toLong(),
             if (isEnum) ElementKind.ENUM else ElementKind.CLASS,
-            packageFqName, clazz.visibleAnnotations, clazz.invisibleAnnotations, descriptor.annotations
+            packageFqName, clazz.visibleAnnotations, clazz.invisibleAnnotations, declaration.annotations
         )
 
         val isDefaultImpls = clazz.name.endsWith("${descriptor.name.asString()}\$DefaultImpls")
@@ -739,15 +742,15 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
         explicitInitializer: JCExpression? = null
     ): JCVariableDecl? {
         if (isSynthetic(field.access) || isIgnored(field.invisibleAnnotations)) return null
-        // not needed anymore
         val origin = kaptContext.origins[field]
+        val declaration = origin?.declaration
         val descriptor = origin?.descriptor
 
         val modifiers = convertModifiers(
             containingClass,
-            field.access, ElementKind.FIELD, packageFqName,
+            field.access.toLong(), ElementKind.FIELD, packageFqName,
             field.visibleAnnotations, field.invisibleAnnotations,
-            descriptor?.annotations ?: Annotations.EMPTY,
+            declaration?.annotations.orEmpty()
         )
 
         val name = field.name
@@ -890,6 +893,7 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
         isInner: Boolean
     ): JCMethodDecl? {
         if (isIgnored(method.invisibleAnnotations)) return null
+        val declaration = kaptContext.origins[method]?.declaration ?: return null
         val descriptor = kaptContext.origins[method]?.descriptor as? CallableDescriptor ?: return null
 
         val isAnnotationHolderForProperty =
@@ -915,7 +919,7 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
                 (method.access.toLong() and VISIBILITY_MODIFIERS.inv())
             else
                 method.access.toLong(),
-            ElementKind.METHOD, packageFqName, visibleAnnotations, method.invisibleAnnotations, descriptor.annotations
+            ElementKind.METHOD, packageFqName, visibleAnnotations, method.invisibleAnnotations, declaration.annotations
         )
 
         if (containingClass.isInterface() && !method.isAbstract() && !method.isStatic() && (method.access and Opcodes.ACC_PRIVATE == 0)) {
@@ -946,7 +950,7 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
                 packageFqName,
                 info.visibleAnnotations,
                 info.invisibleAnnotations,
-                Annotations.EMPTY /* TODO */
+                emptyList() /* TODO */
             )
 
             val name = when {
@@ -1194,25 +1198,6 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
         return true
     }
 
-    @Suppress("NOTHING_TO_INLINE")
-    private inline fun convertModifiers(
-        containingClass: ClassNode,
-        access: Int,
-        kind: ElementKind,
-        packageFqName: String,
-        visibleAnnotations: List<AnnotationNode>?,
-        invisibleAnnotations: List<AnnotationNode>?,
-        descriptorAnnotations: Annotations
-    ): JCModifiers = convertModifiers(
-        containingClass,
-        access.toLong(),
-        kind,
-        packageFqName,
-        visibleAnnotations,
-        invisibleAnnotations,
-        descriptorAnnotations
-    )
-
     private fun convertModifiers(
         containingClass: ClassNode,
         access: Long,
@@ -1220,18 +1205,18 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
         packageFqName: String,
         visibleAnnotations: List<AnnotationNode>?,
         invisibleAnnotations: List<AnnotationNode>?,
-        descriptorAnnotations: Annotations
+        irAnnotations: List<IrAnnotation>,
     ): JCModifiers {
         var seenOverride = false
-        val seenAnnotations = mutableSetOf<AnnotationDescriptor>()
+        val seenAnnotations = mutableSetOf<IrAnnotation>()
         fun convertAndAdd(list: JavacList<JCAnnotation>, annotation: AnnotationNode): JavacList<JCAnnotation> {
             if (annotation.desc == "Ljava/lang/Override;") {
                 if (seenOverride) return list  // KT-34569: skip duplicate @Override annotations
                 seenOverride = true
             }
             // Missing annotation classes can match against multiple annotation descriptors
-            val annotationDescriptor = descriptorAnnotations.firstOrNull {
-                it !in seenAnnotations && checkIfAnnotationValueMatches(annotation, AnnotationValue(it))
+            val annotationDescriptor = irAnnotations.firstOrNull {
+                it !in seenAnnotations && checkIfAnnotationValueMatches(annotation, it.toConstantValue())
             }?.also {
                 seenAnnotations += it
             }
@@ -1262,7 +1247,7 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
         containingClass: ClassNode,
         annotation: AnnotationNode,
         packageFqName: String? = "",
-        annotationDescriptor: AnnotationDescriptor? = null,
+        irAnnotation: IrAnnotation? = null,
         filtered: Boolean = true
     ): JCAnnotation? {
         val annotationType = Type.getType(annotation.desc)
@@ -1274,11 +1259,13 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
             if (stripMetadata && fqName == KOTLIN_METADATA_ANNOTATION) return null
         }
 
-        val ktAnnotation = annotationDescriptor?.source?.getPsi() as? KtAnnotationEntry
-        val firSource = annotationDescriptor?.source as? FirAnnotationSourceElement
+        val ktAnnotation = irAnnotation?.source?.getPsi() as? KtAnnotationEntry
+        val firSource = irAnnotation?.source as? FirAnnotationSourceElement
         val firAnnotation = firSource?.fir
-        val annotationFqName = firAnnotation?.convertNonErrorAnnotationType(annotationDescriptor.type) ?: getNonErrorType(
-            annotationDescriptor?.type,
+        // TODO (see subsequent commit): do not use descriptor types here either.
+        val annotationKotlinType = irAnnotation?.type?.toIrBasedKotlinType()
+        val annotationFqName = firAnnotation?.convertNonErrorAnnotationType(annotationKotlinType!!) ?: getNonErrorType(
+            annotationKotlinType,
             ANNOTATION,
             { ktAnnotation?.typeReference },
             {
@@ -1399,7 +1386,22 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
     }
 
     private fun convertFirType(originalType: ConeKotlinType): JCExpression? {
-        val type = originalType.fullyExpandedType(kaptContext.firSession!!)
+        val possiblyArrayType = originalType.fullyExpandedType(kaptContext.firSession!!)
+        var type = possiblyArrayType
+        var arrayDimensions = 0
+        while (type.isNonPrimitiveArray) {
+            type = type.typeArguments[0].type ?: StandardClassIds.Any.constructClassLikeType()
+            arrayDimensions++
+        }
+        var result = convertFirNonArrayType(type) ?: return null
+        while (arrayDimensions > 0) {
+            result = treeMaker.TypeArray(result)
+            arrayDimensions--
+        }
+        return result
+    }
+
+    private fun convertFirNonArrayType(type: ConeKotlinType): JCExpression? {
         if (type is ConeErrorType) {
             val diagnostic = type.diagnostic as? ConeUnresolvedError
             val simpleName = diagnostic?.qualifier ?: return null
@@ -1497,12 +1499,13 @@ class KaptStubConverter(val kaptContext: KaptContextForStubGeneration, val gener
 
             is Type -> desc is KClassValue && typeMapper.mapKClassValue(desc) == asm
             is AnnotationNode -> {
-                val annotationDescriptor = (desc as? AnnotationValue)?.value ?: return false
-                if (typeMapper.mapType(annotationDescriptor.type).descriptor != asm.desc) return false
+                val annotationValue = (desc as? AnnotationValue)?.value ?: return false
+                val arguments = annotationValue.argumentsMapping
+                if (typeMapper.mapAnnotationClassId(annotationValue) != Type.getType(asm.desc)) return false
                 val asmAnnotationArgs = pairedListToMap(asm.values)
-                if (annotationDescriptor.allValueArguments.size != asmAnnotationArgs.size) return false
+                if (arguments.size != asmAnnotationArgs.size) return false
 
-                for ((descName, descValue) in annotationDescriptor.allValueArguments) {
+                for ([descName, descValue] in arguments) {
                     val asmValue = asmAnnotationArgs[descName.asString()] ?: return false
                     if (!checkIfAnnotationValueMatches(asmValue, descValue)) return false
                 }
