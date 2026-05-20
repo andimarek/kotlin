@@ -20,6 +20,7 @@ import kotlin.script.experimental.api.ScriptCompilationConfiguration
 import kotlin.script.experimental.api.SourceCode
 
 class CliScriptConfigurationsProvider(
+    private val reportSink: ScriptReportSink?,
     getScriptDefinitionProvider: () -> ScriptDefinitionProvider
 ) : ScriptConfigurationsProvider() {
     private val cacheLock = ReentrantReadWriteLock()
@@ -69,7 +70,7 @@ class CliScriptConfigurationsProvider(
                     )
 
                 if (source is VirtualFileScriptSource) {
-                    project.getService(ScriptReportSink::class.java)?.attachReports(source.virtualFile, result.reports)
+                    reportSink?.attachReports(source.virtualFile, result.reports)
                 }
 
                 cacheLock.write {

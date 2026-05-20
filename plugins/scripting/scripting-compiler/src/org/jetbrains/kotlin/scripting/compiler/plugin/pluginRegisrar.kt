@@ -8,18 +8,24 @@
 package org.jetbrains.kotlin.scripting.compiler.plugin
 
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
+import org.jetbrains.kotlin.cli.common.extensions.ReplFactoryExtension
 import org.jetbrains.kotlin.cli.common.extensions.ScriptEvaluationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.registerExtension
+import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.config.MessageCollectorAccess
 import org.jetbrains.kotlin.config.scriptingHostConfiguration
 import org.jetbrains.kotlin.extensions.CompilerConfigurationExtension
+import org.jetbrains.kotlin.extensions.ExtensionPointDescriptor
 import org.jetbrains.kotlin.fir.extensions.CollectAdditionalSourceFilesExtension
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.resolve.extensions.ExtraImportsProviderExtension
 import org.jetbrains.kotlin.resolve.extensions.SyntheticResolveExtension
 import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptConfigurationsProvider
 import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptDefinitionProvider
+import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptReportSink
+import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.JvmStandardReplFactoryExtension
 import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ReplLoweringExtension
 import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ScriptLoweringExtension
 import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ScriptingIrExplainGenerationExtension
@@ -31,6 +37,19 @@ import org.jetbrains.kotlin.scripting.extensions.ScriptExtraImportsProviderExten
 import org.jetbrains.kotlin.scripting.extensions.ScriptingResolveExtension
 import kotlin.script.experimental.host.ScriptingHostConfiguration
 import kotlin.script.experimental.jvm.defaultJvmScriptingHostConfiguration
+
+private fun <T : Any> ExtensionPointDescriptor<T>.registerExtensionIfRequired(
+    extensionStorage: CompilerPluginRegistrar.ExtensionStorage,
+    extension: T,
+) {
+    with(extensionStorage) {
+        try {
+            registerExtension(extension)
+        } catch (_: IllegalArgumentException) {
+            // ignore
+        }
+    }
+}
 
 // Scripting infrastructure still depends on project-based components, therefore we still need a separate registrar above - ScriptingCompilerConfigurationComponentRegistrar
 // TODO: refactor components and migrate the plugin to the project-independent operation
@@ -56,13 +75,17 @@ class ScriptingK2CompilerPluginRegistrar : CompilerPluginRegistrar() {
 
         CollectAdditionalSourceFilesExtension.registerExtension(CollectAdditionalScriptSourcesExtension())
         ScriptEvaluationExtension.registerExtension(JvmCliScriptEvaluationExtension())
+        ReplFactoryExtension.registerExtensionIfRequired(this, JvmStandardReplFactoryExtension())
         SyntheticResolveExtension.registerExtension(ScriptingResolveExtension())
         ExtraImportsProviderExtension.registerExtension(ScriptExtraImportsProviderExtension())
 
         val scriptDefinitionProvider = CliScriptDefinitionProvider()
         ScriptDefinitionProvider.registerExtension(scriptDefinitionProvider)
+
+        @OptIn(MessageCollectorAccess::class) // TODO(KT-84516)
+        val messageCollector = configuration[CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY]
         ScriptConfigurationsProvider.registerExtension(
-            CliScriptConfigurationsProvider {
+            CliScriptConfigurationsProvider(messageCollector?.let { CliScriptReportSink(it) }) {
                 scriptDefinitionProvider
             }
         )
