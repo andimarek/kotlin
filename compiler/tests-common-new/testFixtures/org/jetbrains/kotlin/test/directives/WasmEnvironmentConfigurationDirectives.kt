@@ -44,6 +44,7 @@ object WasmEnvironmentConfigurationDirectives : SimpleDirectivesContainer() {
         }
     }
 
+    @OptIn(SensitiveDirectiveAPI::class)
     val WASM_IGNORE_FOR by valueDirective(
         description = "Ignore test failure in specified (Wasm) environment. " +
                 "Multiple conditions in one directive entry are combined with AND, separated by ' ' " +
