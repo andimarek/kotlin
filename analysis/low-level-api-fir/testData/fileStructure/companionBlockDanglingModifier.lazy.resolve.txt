@@ -17,6 +17,18 @@ FILE: [ResolvedTo(BODY_RESOLVE)] companionBlockDanglingModifier.kt
         }
 
         [ResolvedTo(BODY_RESOLVE)] <DANGLING MODIFIER: Top level declaration expected>
+        public final static [ResolvedTo(BODY_RESOLVE)] fun t2(): R|kotlin/Unit| {
+        }
+
+        [ResolvedTo(BODY_RESOLVE)] @<ERROR TYPE REF: Symbol not found for Anno>[Types]() <DANGLING MODIFIER: Top level declaration expected>
+        @<ERROR TYPE REF: Symbol not found for Anno2>[Types]() public final static [ResolvedTo(BODY_RESOLVE)] fun <no name provided>(): R|kotlin/Unit| {
+            local final [ResolvedTo(BODY_RESOLVE)] fun t3(): R|kotlin/Unit| {
+            }
+
+            ERROR_EXPR(Strange annotated expression: ???)
+        }
+
+        [ResolvedTo(BODY_RESOLVE)] @<ERROR TYPE REF: Symbol not found for Anno4>[Types]() <DANGLING MODIFIER: Top level declaration expected>
         public final operator [ResolvedTo(BODY_RESOLVE)] fun component1(): R|kotlin/Double|
 
         public final operator [ResolvedTo(BODY_RESOLVE)] fun component2(): R|kotlin/Double|

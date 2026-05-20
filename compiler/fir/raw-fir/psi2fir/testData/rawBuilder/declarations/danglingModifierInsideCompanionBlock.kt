@@ -8,4 +8,19 @@ class C {
 
         }
     }
+
+    companion {
+        fun t2() {}
+
+        @Anno
+    }
+
+    @Anno2
+    companion {
+        fun t3() {}
+
+        @Anno3
+    }
+
+    @Anno4
 }

@@ -6,4 +6,19 @@
 
         }
     }
+
+    companion {
+        fun t2() {/* DeclarationStructureElement */}
+
+        @Anno/* DeclarationStructureElement */
+    }
+
+    @Anno2
+    companion {/* DeclarationStructureElement */
+        fun t3() {}
+
+        @Anno3
+    }
+
+    @Anno4/* DeclarationStructureElement */
 }
