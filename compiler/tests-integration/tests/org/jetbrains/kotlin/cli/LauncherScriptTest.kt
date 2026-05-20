@@ -162,7 +162,7 @@ class LauncherScriptTest : TestCaseWithTmpdir() {
         )
     }
 
-    fun testKotlincWasmSimple() {
+    fun testKotlincWasmJsSimple() {
         runProcess(
             "kotlinc-wasm",
             "$testDataDirectory/emptyMain.kt",
@@ -177,6 +177,21 @@ class LauncherScriptTest : TestCaseWithTmpdir() {
             environment = mapOf("JAVA_HOME" to KtTestUtil.getJdk8Home().absolutePath)
         )
     }
+
+    fun testKotlincWasmWasiSimple() {
+        runProcess(
+            "kotlinc-wasm",
+            "$testDataDirectory/emptyMain.kt",
+            KotlinWasmCompilerArguments::suppressWarnings.cliArgument,
+            KotlinWasmCompilerArguments::libraries.cliArgument(PathUtil.kotlinPathsForCompiler.wasmWasiStdLibKlibPath.absolutePath),
+            KotlinWasmCompilerArguments::nopack.cliArgument,
+            KotlinWasmCompilerArguments::outputDir.cliArgument(tmpdir.path),
+            KotlinWasmCompilerArguments::moduleName.cliArgument("out"),
+            KotlinWasmCompilerArguments::wasmTarget.cliArgument("wasm-wasi"),
+            environment = mapOf("JAVA_HOME" to KtTestUtil.getJdk8Home().absolutePath)
+        )
+    }
+
 
     fun testKotlinNoReflect() {
         kotlincInProcess("$testDataDirectory/reflectionUsage.kt", K2JVMCompilerArguments::destination.cliArgument, tmpdir.path)
