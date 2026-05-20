@@ -170,9 +170,9 @@ class IrModuleDeserializerWithBuiltIns(
     }
 
     override operator fun contains(idSig: IdSignature): Boolean {
-        if (idSig.packageFqName() == StandardClassIds.BASE_INTERNAL_IR_PACKAGE) return true
-
         val topLevel = idSig.topLevelSignature()
+        if (topLevel in irBuiltInsMap) return true
+
         return checkIsFunctionInterface(topLevel) || idSig in delegate
     }
 
@@ -205,8 +205,6 @@ class IrModuleDeserializerWithBuiltIns(
     }
 
     override fun tryDeserializeIrSymbol(idSig: IdSignature, symbolKind: BinarySymbolData.SymbolKind): IrSymbol? {
-        if (idSig in delegate) return delegate.tryDeserializeIrSymbol(idSig, symbolKind)
-
         irBuiltInsMap[idSig]?.let { return it }
 
         val topLevel = idSig.topLevelSignature()
@@ -215,7 +213,7 @@ class IrModuleDeserializerWithBuiltIns(
             return referenceDeserializedSymbol(symbolTable, null, symbolKind, idSig)
         }
 
-        return null
+        return delegate.tryDeserializeIrSymbol(idSig, symbolKind)
     }
 
     override fun deserializedSymbolNotFound(idSig: IdSignature): Nothing = delegate.deserializedSymbolNotFound(idSig)
@@ -254,7 +252,7 @@ class IrModuleDeserializerWithBuiltIns(
 
     internal fun finish(irBuiltIns: IrBuiltIns) {
         syntheticFunctionClassGenerator.typeSystem = IrTypeSystemContextImpl(irBuiltIns)
-        syntheticProvider.finalize()
+        syntheticProvider.finish()
     }
 
     override fun signatureDeserializerForFile(fileName: String): IdSignatureDeserializer {

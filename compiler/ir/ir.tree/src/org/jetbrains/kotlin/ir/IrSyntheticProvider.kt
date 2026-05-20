@@ -6,7 +6,6 @@
 package org.jetbrains.kotlin.ir
 
 import org.jetbrains.kotlin.builtins.PrimitiveType
-import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.PackageFragmentDescriptor
@@ -276,7 +275,7 @@ class IrSyntheticProvider(
         )
     }
 
-    public fun finalize() {
+    public fun finish() {
         fun IrSimpleFunctionSymbol.applyIntrinsicConstAnnotation(): IrSimpleFunctionSymbol {
             return apply {
                 owner.annotations += intrinsicConstAnnotationCall()
