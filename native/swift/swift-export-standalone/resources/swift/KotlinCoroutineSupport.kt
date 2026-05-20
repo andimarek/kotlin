@@ -252,7 +252,7 @@ public fun SwiftFlowIterator_next(self: kotlin.native.internal.NativePtr, contin
         }
     }
     val __cancellation = kotlin.native.internal.ref.dereferenceExternalRCRef(cancellation) as SwiftJob
-    CoroutineScope(__cancellation + Dispatchers.Default).launch(start = CoroutineStart.UNDISPATCHED) {
+    CoroutineScope(__cancellation + Dispatchers.Default).launch(start = CoroutineStart.DEFAULT) {
         try {
             val _result = __self.next()
             if (_result == null) {

@@ -506,7 +506,7 @@ private fun BridgeFunctionDescriptor.createKotlinBridge(
         val errorParameter = errorParameter ?: error("Async function must have an error parameter")
         add(
             """
-            CoroutineScope(__${cancellation.name.kotlinIdentifier} + Dispatchers.Default).kotlinx_coroutines_launch(start = CoroutineStart.UNDISPATCHED) {
+            CoroutineScope(__${cancellation.name.kotlinIdentifier} + Dispatchers.Default).kotlinx_coroutines_launch(start = CoroutineStart.DEFAULT) {
                 try {
                     val $resultName = $callSite
                     __${continuation.name}(${resultName})

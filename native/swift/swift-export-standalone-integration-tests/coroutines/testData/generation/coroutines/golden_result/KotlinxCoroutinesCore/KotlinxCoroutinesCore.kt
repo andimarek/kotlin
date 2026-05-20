@@ -79,7 +79,7 @@ public fun kotlinx_coroutines_flow_FlowCollector_emit__TypesOfArguments__Swift_O
         }
     }
     val __cancellation = kotlin.native.internal.ref.dereferenceExternalRCRef(cancellation) as SwiftJob
-    CoroutineScope(__cancellation + Dispatchers.Default).kotlinx_coroutines_launch(start = CoroutineStart.UNDISPATCHED) {
+    CoroutineScope(__cancellation + Dispatchers.Default).kotlinx_coroutines_launch(start = CoroutineStart.DEFAULT) {
         try {
             val _result = __self.emit(__value)
             __continuation(_result)
@@ -112,7 +112,7 @@ public fun kotlinx_coroutines_flow_MutableSharedFlow_emit__TypesOfArguments__Swi
         }
     }
     val __cancellation = kotlin.native.internal.ref.dereferenceExternalRCRef(cancellation) as SwiftJob
-    CoroutineScope(__cancellation + Dispatchers.Default).kotlinx_coroutines_launch(start = CoroutineStart.UNDISPATCHED) {
+    CoroutineScope(__cancellation + Dispatchers.Default).kotlinx_coroutines_launch(start = CoroutineStart.DEFAULT) {
         try {
             val _result = __self.emit(__value)
             __continuation(_result)
