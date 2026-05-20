@@ -8,4 +8,26 @@ fun foo(param: ((Int) -> String) -> String) {
     }<!>
 }
 
+fun bar(param: ((Int) -> String, (Boolean) -> String) -> String) {
+    bar <!ARGUMENT_TYPE_MISMATCH!>{
+        f: String, g: Boolean -> <!UNRESOLVED_REFERENCE!>f<!>(42, 20)
+    }<!>
+}
+
+abstract class MyCustomFunction : ((Int) -> String) -> String
+
+fun baz(param: MyCustomFunction) {
+    baz <!ARGUMENT_TYPE_MISMATCH!>{
+        f: String -> <!UNRESOLVED_REFERENCE!>f<!>(42)
+    }<!>
+}
+
+fun interface MySamFunction : ((Int) -> String) -> String
+
+fun fuz(param: MySamFunction) {
+    fuz <!ARGUMENT_TYPE_MISMATCH!>{
+        f: String -> <!UNRESOLVED_REFERENCE!>f<!>(42)
+    }<!>
+}
+
 /* GENERATED_FIR_TAGS: functionDeclaration, functionalType, integerLiteral, lambdaLiteral */
